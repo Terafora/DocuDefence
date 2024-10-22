@@ -1,7 +1,20 @@
 package main
 
-import "fmt"
+import (
+	"DocuDefense/src/handlers"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
 
 func main() {
-    fmt.Println("Hello, world!")
+	r := mux.NewRouter()
+
+	r.HandleFunc("/users", handlers.GetUsers).Methods("GET")
+	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
+	r.HandleFunc("/users/{id}", handlers.UpdateUser).Methods("PUT")
+	r.HandleFunc("/users/{id}", handlers.DeleteUser).Methods("DELETE")
+
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
