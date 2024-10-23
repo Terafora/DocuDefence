@@ -11,7 +11,11 @@ import (
 var users = make(map[string]models.User)
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(users)
+	var userList []models.User
+	for _, user := range users {
+		userList = append(userList, user)
+	}
+	json.NewEncoder(w).Encode(userList)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
