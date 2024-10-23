@@ -4,6 +4,7 @@ import (
 	"DocuDefense/src/models"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -21,11 +22,14 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userList)
 }
 
-// Create a new user
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	_ = json.NewDecoder(r.Body).Decode(&user)
+
+	// Initialize the FileNames slice
+	user.FileNames = []string{}
 	users[user.ID] = user
+
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -54,12 +58,11 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Upload a file and associate it with a user
 func UploadFile(w http.ResponseWriter, r *http.Request) {
-
 	// Parse the form to get the file data
-	err := r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20) // 10MB limit
 	if err != nil {
+		log.Printf("Error parsing form: %v", err) // Added logging for form parsing error
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
@@ -67,10 +70,18 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Get the file and handler from the form
 	file, handler, err := r.FormFile("contract")
 	if err != nil {
+		log.Printf("Error retrieving file from form: %v", err) // Added logging for file retrieval error
 		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
+
+	// Ensure the file is a PDF
+	if handler.Header.Get("Content-Type") != "application/pdf" {
+		log.Printf("Invalid file type: %v, expected application/pdf", handler.Header.Get("Content-Type")) // Logging invalid file type
+		http.Error(w, "Only PDF files are allowed", http.StatusBadRequest)
+		return
+	}
 
 	// Get the user ID from the URL
 	params := mux.Vars(r)
@@ -79,6 +90,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Check if the user exists
 	user, ok := users[userID]
 	if !ok {
+		log.Printf("User not found: %s", userID) // Logging if user not found
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -89,6 +101,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Ensure the uploads directory exists
 	err = os.MkdirAll("./uploads", os.ModePerm)
 	if err != nil {
+		log.Printf("Error creating uploads directory: %v", err) // Logging directory creation error
 		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
 		return
 	}
@@ -96,6 +109,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Create the file on disk
 	dst, err := os.Create(filePath)
 	if err != nil {
+		log.Printf("Error creating file on disk: %v", err) // Logging file creation error
 		http.Error(w, "Unable to create file", http.StatusInternalServerError)
 		return
 	}
@@ -104,12 +118,18 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Copy the uploaded file data to the file on disk
 	_, err = io.Copy(dst, file)
 	if err != nil {
+		log.Printf("Error saving file to disk: %v", err) // Logging file saving error
 		http.Error(w, "Error saving file", http.StatusInternalServerError)
 		return
 	}
 
-	user.FileName = handler.Filename
-	users[userID] = user
+	// Add the new file name to the user's list of files
+	user.FileNames = append(user.FileNames, handler.Filename)
+	users[userID] = user // Save the updated user
 
+	// Log the successful upload
+	log.Printf("Successfully uploaded file for user %s: %s", userID, handler.Filename)
+
+	// Return the updated user information
 	json.NewEncoder(w).Encode(user)
 }
