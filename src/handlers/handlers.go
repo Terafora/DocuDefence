@@ -26,7 +26,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	_ = json.NewDecoder(r.Body).Decode(&user)
 
-	// Initialize the FileNames slice
+	// Hash the password before saving the user
+	err := user.HashPassword(user.Password)
+	if err != nil {
+		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		return
+	}
+
 	user.FileNames = []string{}
 	users[user.ID] = user
 
@@ -132,4 +138,41 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	// Return the updated user information
 	json.NewEncoder(w).Encode(user)
+}
+
+// LoginUser authenticates a user by email and password
+func LoginUser(w http.ResponseWriter, r *http.Request) {
+	var loginData struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&loginData)
+
+	// Find the user by email
+	var foundUser *models.User
+	for _, user := range users {
+		if user.Email == loginData.Email {
+			foundUser = &user
+			break
+		}
+	}
+
+	// If user is not found
+	if foundUser == nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if the password is correct
+	err := foundUser.CheckPassword(loginData.Password)
+	if err != nil {
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		return
+	}
+
+	// If login is successful
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Login successful",
+	})
 }
