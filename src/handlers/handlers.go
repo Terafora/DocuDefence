@@ -7,11 +7,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 )
 
 var users = make(map[string]*models.User) // Store pointers to users
+
+// Secret key for signing the JWT
+var jwtKey = []byte("your_secret_key")
 
 // Get all users
 func GetUsers(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +193,29 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// LoginUser authenticates a user by email and password
+// GenerateJWT generates a new JWT token for an authenticated user
+func GenerateJWT(user *models.User) (string, error) {
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims := &Claims{
+		Email: user.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	// Create the JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with the secret key
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// LoginUser authenticates a user by email and password and returns a JWT
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var loginData struct {
 		Email    string `json:"email"`
@@ -227,10 +254,19 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If login is successful, generate JWT
+	token, err := GenerateJWT(foundUser)
+	if err != nil {
+		log.Printf("Error generating token for user %s: %v", foundUser.Email, err)
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
 	// If login is successful
 	log.Printf("Login successful for user: %v", foundUser)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Login successful",
+		"token":   token,
 	})
 }
