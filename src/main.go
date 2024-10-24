@@ -13,6 +13,7 @@ func main() {
 
 	r.HandleFunc("/users", handlers.GetUsers).Methods("GET")
 	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
+	r.HandleFunc("/login", handlers.LoginUser).Methods("POST")
 	r.Handle("/users/{id}", handlers.BasicAuthMiddleware(http.HandlerFunc(handlers.UpdateUser))).Methods("PUT")
 	r.Handle("/users/{id}", handlers.BasicAuthMiddleware(http.HandlerFunc(handlers.DeleteUser))).Methods("DELETE")
 	r.Handle("/users/{id}/upload", handlers.BasicAuthMiddleware(http.HandlerFunc(handlers.UploadFile))).Methods("POST")
