@@ -10,7 +10,7 @@ type User struct {
 	Surname   string   `json:"surname"`
 	Email     string   `json:"email"`
 	Birthdate string   `json:"birthdate"`
-	Password  string   `json:"-"`
+	Password  string   `json:"password"`
 	FileNames []string `json:"file_names"`
 }
 
