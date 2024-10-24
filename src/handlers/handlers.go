@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"DocuDefense/src/models"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -11,20 +12,44 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var users = make(map[string]*models.User) // Store pointers to users
+// MongoDB collections
+var usersCollection *mongo.Collection
+
+// SetMongoClient initializes the MongoDB client and sets the users collection
+func SetMongoClient(client *mongo.Client) {
+	usersCollection = client.Database("docudefense").Collection("users")
+}
 
 // Secret key for signing the JWT
-var jwtKey = []byte("your_secret_key")
+var jwtKey = []byte("your_secret_key") // Ensure this is the same as used in JWTAuthMiddleware
 
 // Get all users
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	var userList []*models.User
-	for _, user := range users {
-		userList = append(userList, user)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Find all users in the collection
+	cursor, err := usersCollection.Find(ctx, bson.M{})
+	if err != nil {
+		log.Printf("Error retrieving users: %v", err)
+		http.Error(w, "Error retrieving users", http.StatusInternalServerError)
+		return
 	}
-	log.Printf("Returning list of users: %v", userList) // Log the list of users
+	defer cursor.Close(ctx)
+
+	var userList []models.User
+	if err = cursor.All(ctx, &userList); err != nil {
+		log.Printf("Error decoding users: %v", err)
+		http.Error(w, "Error decoding users", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Returning list of users: %v", userList)
 	json.NewEncoder(w).Encode(userList)
 }
 
@@ -55,67 +80,101 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Initialize the FileNames slice
 	user.FileNames = []string{}
 
-	// Save the user with the hashed password to the users map
-	users[user.ID] = &user
-	log.Printf("User created with hashed password: %v", users[user.ID].Password)
+	// Insert the user into the database
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	// Create a response object (copy) to prevent exposing the password hash
-	responseUser := user
-	responseUser.Password = "" // Clear the password only for the response
+	_, err = usersCollection.InsertOne(ctx, user)
+	if err != nil {
+		log.Printf("Error inserting user into database: %v", err)
+		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		return
+	}
 
-	// Send the created user as a response (without the password)
-	json.NewEncoder(w).Encode(responseUser)
+	// Clear the password before responding
+	user.Password = ""
+	json.NewEncoder(w).Encode(user)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	existingUser, ok := users[params["id"]]
-	if !ok {
-		log.Printf("User not found: %s", params["id"]) // Log user not found
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
+	userID := params["id"]
 
 	// Decode the updated user details
 	var updatedUser models.User
 	err := json.NewDecoder(r.Body).Decode(&updatedUser)
 	if err != nil {
-		log.Printf("Error decoding user update data: %v", err) // Log decoding error
+		log.Printf("Error decoding user update data: %v", err)
 		http.Error(w, "Invalid user data", http.StatusBadRequest)
 		return
 	}
 
-	// Update fields of the existing user while keeping its pointer intact
-	existingUser.FirstName = updatedUser.FirstName
-	existingUser.Surname = updatedUser.Surname
-	existingUser.Email = updatedUser.Email
-	existingUser.Birthdate = updatedUser.Birthdate
-
+	// Hash the password if provided
 	if updatedUser.Password != "" {
-		// Rehash password if it's being updated
-		err := existingUser.HashPassword(updatedUser.Password)
-		if err != nil {
-			log.Printf("Error hashing updated password for user %s: %v", existingUser.Email, err) // Log hashing error
+		if err := updatedUser.HashPassword(updatedUser.Password); err != nil {
+			log.Printf("Error hashing updated password: %v", err)
 			http.Error(w, "Error updating password", http.StatusInternalServerError)
 			return
 		}
 	}
 
-	log.Printf("User updated: %v", existingUser) // Log user update
-	// Respond with the updated user
-	json.NewEncoder(w).Encode(existingUser)
+	// Update the user in the database
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID) // Ensure this is a valid ObjectID
+	if err != nil {
+		log.Printf("Invalid user ID format: %v", err)
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
+	filter := bson.M{"_id": userIDObj}
+	update := bson.M{"$set": updatedUser}
+
+	result, err := usersCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		log.Printf("Error updating user %s: %v", userID, err)
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		log.Printf("No user found with ID: %s", userID)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	log.Printf("User updated: %v", updatedUser)
+	json.NewEncoder(w).Encode(updatedUser)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	if _, ok := users[params["id"]]; ok {
-		log.Printf("Deleting user with ID: %s", params["id"]) // Log user deletion
-		delete(users, params["id"])
-		json.NewEncoder(w).Encode(users)
-	} else {
-		log.Printf("Attempt to delete non-existing user with ID: %s", params["id"]) // Log non-existing user
-		http.Error(w, "User not found", http.StatusNotFound)
+	userID := params["id"]
+
+	// Delete the user from the database
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		log.Printf("Invalid user ID format: %v", err)
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
 	}
+
+	result, err := usersCollection.DeleteOne(ctx, bson.M{"_id": userIDObj})
+	if err != nil || result.DeletedCount == 0 {
+		log.Printf("Error deleting user %s: %v", userID, err)
+		http.Error(w, "Error deleting user", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("User deleted with ID: %s", userID)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "User deleted",
+	})
 }
 
 func UploadFile(w http.ResponseWriter, r *http.Request) {
@@ -146,14 +205,6 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID := params["id"]
 
-	// Check if the user exists
-	user, ok := users[userID]
-	if !ok {
-		log.Printf("User not found: %s", userID)
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
 	// Create a file path to save the file on disk
 	filePath := "./uploads/" + handler.Filename
 
@@ -182,15 +233,22 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add the new file name to the user's list of files
-	user.FileNames = append(user.FileNames, handler.Filename)
-	users[userID] = user
+	// Update the user's file list in the database
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	// Log the successful upload
+	update := bson.M{"$push": bson.M{"filenames": handler.Filename}}
+	result, err := usersCollection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	if err != nil || result.MatchedCount == 0 {
+		log.Printf("Error updating user's file list for user %s: %v", userID, err)
+		http.Error(w, "Error updating file list", http.StatusInternalServerError)
+		return
+	}
+
 	log.Printf("Successfully uploaded file for user %s: %s", userID, handler.Filename)
-
-	// Return the updated user information
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "File uploaded",
+	})
 }
 
 // GenerateJWT generates a new JWT token for an authenticated user
@@ -229,15 +287,12 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find the user by email
-	var foundUser *models.User
-	for _, user := range users {
-		if user.Email == loginData.Email {
-			foundUser = user
-			break
-		}
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	if foundUser == nil {
+	var foundUser models.User
+	err = usersCollection.FindOne(ctx, bson.M{"email": loginData.Email}).Decode(&foundUser)
+	if err != nil {
 		log.Printf("Login failed: user with email %s not found", loginData.Email)
 		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
@@ -255,14 +310,13 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If login is successful, generate JWT
-	token, err := GenerateJWT(foundUser)
+	token, err := GenerateJWT(&foundUser)
 	if err != nil {
 		log.Printf("Error generating token for user %s: %v", foundUser.Email, err)
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
 
-	// If login is successful
 	log.Printf("Login successful for user: %v", foundUser)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{

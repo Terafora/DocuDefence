@@ -1,17 +1,18 @@
 package models
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID        string   `json:"id"`
-	FirstName string   `json:"first_name"`
-	Surname   string   `json:"surname"`
-	Email     string   `json:"email"`
-	Birthdate string   `json:"birthdate"`
-	Password  string   `json:"password"`
-	FileNames []string `json:"file_names"`
+	ID        primitive.ObjectID `json:"id" bson:"_id"`
+	FirstName string             `json:"first_name" bson:"first_name"`
+	Surname   string             `json:"surname" bson:"surname"`
+	Email     string             `json:"email" bson:"email"`
+	Birthdate string             `json:"birthdate" bson:"birthdate"`
+	Password  string             `json:"password" bson:"password"`
+	FileNames []string           `json:"file_names" bson:"file_names"`
 }
 
 // Hashes the user's password before storing it

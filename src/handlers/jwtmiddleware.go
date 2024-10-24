@@ -31,11 +31,21 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			// Referencing jwtKey from handlers.go, no redeclaration needed here
-			return jwtKey, nil
+			// Ensure that the signing method is the same as the one used for signing
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, http.ErrNotSupported
+			}
+			return jwtKey, nil // Ensure this key is the same as the one used to sign the token
 		})
 
-		if err != nil || !token.Valid || time.Now().After(claims.ExpiresAt.Time) {
+		// Check if there was an error parsing the token
+		if err != nil {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Check if the token is valid and not expired
+		if !token.Valid || time.Now().After(claims.ExpiresAt.Time) {
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return
 		}

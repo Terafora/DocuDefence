@@ -2,10 +2,15 @@ package handlers
 
 import (
 	"DocuDefense/src/models"
+	"context"
 	"log"
 	"net/http"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
+// BasicAuthMiddleware provides basic authentication
 func BasicAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve Basic Auth credentials (email and password)
@@ -16,17 +21,15 @@ func BasicAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Find the user by email
-		var foundUser *models.User
-		for _, user := range users {
-			if user.Email == email {
-				foundUser = user
-				break
-			}
-		}
+		// Find the user by email from MongoDB
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		var foundUser models.User
+		err := usersCollection.FindOne(ctx, bson.M{"email": email}).Decode(&foundUser)
 
 		// If no user is found or the password check fails
-		if foundUser == nil {
+		if err != nil {
 			log.Printf("User not found for email: %s", email)
 			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 			return
