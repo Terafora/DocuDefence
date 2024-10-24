@@ -69,6 +69,7 @@ func TestCreateUser(t *testing.T) {
 
 // Test LoginUser
 func TestLoginUser(t *testing.T) {
+	// Ensure user exists in map before logging in
 	users["1"] = &models.User{
 		ID:        "1",
 		FirstName: "Charlotte",
@@ -110,7 +111,7 @@ func TestLoginUser(t *testing.T) {
 
 // Test UpdateUser
 func TestUpdateUser(t *testing.T) {
-	// Create a user before updating
+	// Initialize the user before updating
 	users["1"] = &models.User{
 		ID:        "1",
 		FirstName: "Charlotte",
