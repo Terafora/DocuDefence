@@ -50,16 +50,22 @@ The API captures basic user details (first name, surname, email, and date of bir
 ```bash
 
 .
-├── src
-│   ├── handlers         # Contains the CRUD handler functions
-│   │   ├── handlers.go  # Main CRUD logic
-│   │   ├── jwtmiddleware.go  # JWT Authentication middleware
-│   │   └── handlers_test.go  # Unit tests for the handlers
-│   ├── models           # Defines the User struct
-│   │   └── user.go      # User data structure
-│   └── main.go          # Entry point for the application
-├── go.mod               # Go modules (dependencies)
-└── README.md            # Project documentation
+├── frontend
+├── backend
+│   ├── src
+│   │   ├── handlers                   # Contains the CRUD handler functions
+│   │   │   ├── handlers.go            # Main CRUD logic
+│   │   │   ├── jwtmiddleware.go       # JWT Authentication middleware
+│   │   │   └── middleware.go          # Basic authentication middleware
+│   │   └── models                     # Defines the User struct
+│   │       └── user.go                # User data structure
+│   ├── main.go                        # Entry point for the application
+│   ├── go.mod                         # Go modules (dependencies)
+│   ├── go.sum                         # Go module sums (dependency checksums)
+│   └── .env                           # Environment variables (e.g., JWT_SECRET, MongoDB URI)
+├── docker-compose.yml                 # For spinning up both services
+├── README.md                          # Project documentation
+
 ```
 
 ***
