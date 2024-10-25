@@ -8,13 +8,14 @@ const BASE_URL = 'http://localhost:8000';
 async function fetchWithAuth(url, options = {}) {
   const token = getToken();
   const headers = {
-    ...options.headers,
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: token }), // Use the full "Bearer <token>" string
   };
 
   return fetch(url, { ...options, headers });
 }
+
 
 // Fetch all users with token authentication
 export async function getUsers() {
@@ -30,6 +31,25 @@ export async function createUser(user) {
     body: JSON.stringify(user),
   });
   if (!response.ok) throw new Error('Failed to create user');
+  return response.json();
+}
+
+// Update an existing user
+export async function updateUser(userId, updatedUserData) {
+  const response = await fetchWithAuth(`${BASE_URL}/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updatedUserData),
+  });
+  if (!response.ok) throw new Error('Failed to update user');
+  return response.json();
+}
+
+// Delete a user
+export async function deleteUser(userId) {
+  const response = await fetchWithAuth(`${BASE_URL}/users/${userId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete user');
   return response.json();
 }
 

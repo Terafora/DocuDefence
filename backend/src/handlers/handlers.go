@@ -91,6 +91,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID := params["id"]
 
+	// Retrieve the user claims from the JWT token
 	claims := r.Context().Value("userClaims").(*Claims)
 	requesterEmail := claims.Email
 
@@ -101,6 +102,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Find the user by ID
 	var targetUser models.User
 	err = usersCollection.FindOne(context.Background(), bson.M{"_id": userIDObj}).Decode(&targetUser)
 	if err != nil {
@@ -109,6 +111,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ensure the user can only update their own account
 	if requesterEmail != targetUser.Email {
 		log.Printf("Unauthorized update attempt by %s on account %s", requesterEmail, targetUser.Email)
 		http.Error(w, "You are not authorized to update this account", http.StatusForbidden)
@@ -131,9 +134,9 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Update the user
 	filter := bson.M{"_id": userIDObj}
 	update := bson.M{"$set": updatedUser}
-
 	result, err := usersCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil || result.MatchedCount == 0 {
 		log.Printf("Error updating user %s: %v", userID, err)
@@ -150,6 +153,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID := params["id"]
 
+	// Retrieve the user claims from the JWT token
 	claims := r.Context().Value("userClaims").(*Claims)
 	requesterEmail := claims.Email
 
@@ -160,6 +164,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Find the user by ID
 	var targetUser models.User
 	err = usersCollection.FindOne(context.Background(), bson.M{"_id": userIDObj}).Decode(&targetUser)
 	if err != nil {
@@ -168,12 +173,14 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ensure the user can only delete their own account
 	if requesterEmail != targetUser.Email {
 		log.Printf("Unauthorized delete attempt by %s on account %s", requesterEmail, targetUser.Email)
 		http.Error(w, "You are not authorized to delete this account", http.StatusForbidden)
 		return
 	}
 
+	// Delete the user
 	result, err := usersCollection.DeleteOne(context.Background(), bson.M{"_id": userIDObj})
 	if err != nil || result.DeletedCount == 0 {
 		log.Printf("Error deleting user %s: %v", userID, err)
@@ -336,10 +343,11 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log the generated token to ensure it's valid
+	// Log the token and response for debugging
 	log.Printf("Generated token for user %s: %s", foundUser.Email, token)
-
 	log.Printf("Login successful for user: %v", foundUser)
+
+	// Send response with the token
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Login successful",
