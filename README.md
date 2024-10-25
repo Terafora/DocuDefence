@@ -1,10 +1,9 @@
 # DocuDefense
 ## Project Overview
 
-DocuDefense is a simple CRUD (Create, Read, Update, Delete) API developed in Golang for a fictional user management system. It manages user data, allowing clients to create, retrieve, update, and delete users through API endpoints. The project includes unit testing for each operation and is in the process of adding authentication and file upload functionality.
+DocuDefense is a CRUD (Create, Read, Update, Delete) API developed in Golang and functions as a secure way to upload and sace PDF documents, primarily contracts. It manages user data using MongoDB, allowing clients to create, retrieve, update, and delete users through API endpoints. The project includes unit testing for each operation and implements authentication functionality.
 
-The API captures basic user details (first name, surname, email, and date of birth), and future enhancements will include file uploads, authentication, and additional security measures.
-
+The API captures basic user details (first name, surname, email, and date of birth), with data securely stored in MongoDB. Future enhancements will include additional security measures.
 ***
 
 ## Features Completed
@@ -19,12 +18,12 @@ The API captures basic user details (first name, surname, email, and date of bir
    - Tests are provided to ensure each CRUD operation functions as expected.
  
 - File Upload:
-       -  Functionality to upload a PDF file and associate it with a user.
-        Files will be stored on disk.
+       - Functionality to upload a PDF file and associate it with a user.
+       - Note: Files will be stored on MongoDB, enhancing data management and retrieval.
 
     - Basic Authentication:
         - Adding middleware for email and password authentication.
-        Users will be required to authenticate before accessing endpoints.
+        - Users will be required to authenticate before accessing endpoints.
 
      - JWT Authentication:
         - The current plan is to upgrade basic authentication to JWT-based authentication for better security.
@@ -34,9 +33,6 @@ The API captures basic user details (first name, surname, email, and date of bir
    - Dockerization:
        - Adding a Dockerfile for easy deployment and running the application in containers.
 
-   - Data Storage:
-       - Users are currently stored in memory, but files will be stored on disk once the upload functionality is added.
-       - If time allows, storage will be moved from disk to online storage with MongoDB.
 
 ***
 
@@ -45,6 +41,7 @@ The API captures basic user details (first name, surname, email, and date of bir
  - Backend Language: Golang
  - Router: [gorilla/mux](https://github.com/gorilla/mux)
  - Testing Framework: Go's built-in testing package
+ - Database: MongoDB for data storage
 
 ***
 
@@ -75,15 +72,28 @@ The API captures basic user details (first name, surname, email, and date of bir
 | PUT    | `/users/{id}`     | Updates an existing user   | `{ "first_name": "Updated", ... }`   |
 | DELETE | `/users/{id}`     | Deletes a user by ID       | N/A       
 
+### Example Payload for Creating a User
+
 ```JSON
 {
-  "id": "1",
-  "first_name": "Test",
-  "surname": "User",
-  "email": "testuser@code.com",
-  "birthdate": "2024-10-23"
+  "first_name": "UpdatedName",
+  "surname": "UpdatedSurname",
+  "email": "newuser@example.com",
+  "birthdate": "2024-11-01"
 }
 ```
+
+### Example Payload for Updating a User
+
+```JSON
+{
+  "first_name": "UpdatedName",
+  "surname": "UpdatedSurname",
+  "email": "newuser@example.com",
+  "birthdate": "2024-11-01"
+}
+```
+
 ***
 
 ## Error Handling
@@ -187,8 +197,9 @@ JWT_SECRET=your_secret_key
 
 ```
 
-    Access the variable in your code:
-    In Go, use os.Getenv("JWT_SECRET") to retrieve the secret key.
+3. Access the variable in your code:
+
+In Go, use os.Getenv("JWT_SECRET") to retrieve the secret key.
 
 Example:
 
@@ -240,6 +251,7 @@ Here’s a list of Go libraries used in the project:
 
   - [gorilla/mux](https://github.com/gorilla/mux): For routing and handling HTTP requests.
   - [JWT-go](https://github.com/golang-jwt/jwt): For generating and parsing JWT tokens for authentication.
+  - [MongoDB Go Driver](https://github.com/mongodb/mongo-go-driver): For MongoDB database interactions.
 
 ***
 
