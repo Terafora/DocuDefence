@@ -1,4 +1,4 @@
-module DocuDefense
+module DocuDefense/backend
 
 go 1.20
 
