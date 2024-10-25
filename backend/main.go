@@ -68,8 +68,8 @@ func main() {
 	r.Handle("/users/{id}", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.UpdateUser))).Methods("PUT")
 	r.Handle("/users/{id}", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DeleteUser))).Methods("DELETE")
 	r.Handle("/users/{id}/upload", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.UploadFile))).Methods("POST")
+	r.HandleFunc("/search", handlers.SearchUsers).Methods("GET")
 
-	// Set up CORS middleware with your desired configuration
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"}, // Allow frontend origin
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},

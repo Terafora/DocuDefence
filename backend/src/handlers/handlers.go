@@ -183,6 +183,35 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func SearchUsers(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	filter := bson.M{}
+
+	if firstName, ok := queryParams["first_name"]; ok {
+		filter["first_name"] = bson.M{"$regex": firstName[0], "$options": "i"}
+	}
+	if surname, ok := queryParams["surname"]; ok {
+		filter["surname"] = bson.M{"$regex": surname[0], "$options": "i"}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := usersCollection.Find(ctx, filter)
+	if err != nil {
+		http.Error(w, "Error fetching users", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var users []models.User
+	if err := cursor.All(ctx, &users); err != nil {
+		http.Error(w, "Error decoding users", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(users)
+}
+
 func UploadFile(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20) // 10MB limit
 	if err != nil {
