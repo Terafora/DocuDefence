@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"DocuDefense/src/models"
+	"DocuDefense/backend/src/models"
 	"context"
 	"encoding/json"
 	"io"
@@ -15,7 +15,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+// Define an interface for MongoDB collection methods used in handlers (testing purposes)
+type UserCollection interface {
+	Find(context.Context, interface{}, ...*options.FindOptions) (*mongo.Cursor, error)
+}
 
 // MongoDB collections
 var usersCollection *mongo.Collection
@@ -23,6 +29,11 @@ var usersCollection *mongo.Collection
 // SetMongoClient initializes the MongoDB client and sets the users collection
 func SetMongoClient(client *mongo.Client) {
 	usersCollection = client.Database("docudefense").Collection("users")
+}
+
+// Allows setting a mock collection for testing
+func SetUsersCollection(collection *mongo.Collection) {
+	usersCollection = collection
 }
 
 // Secret key for signing the JWT
@@ -55,6 +66,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
+
 	// Decode the request body into the user object
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -63,24 +75,18 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if a password was provided
-	if user.Password == "" {
-		log.Printf("Password is missing for user %v", user)
-		http.Error(w, "Password is required", http.StatusBadRequest)
-		return
+	// Ensure a unique ObjectID is assigned if ID is zero
+	if user.ID.IsZero() {
+		user.ID = primitive.NewObjectID()
 	}
 
-	// Hash the password before saving it
+	// **Hash the password before saving it**
 	if err := user.HashPassword(user.Password); err != nil {
-		log.Printf("Error hashing password for user %v: %v", user, err)
+		log.Printf("Error hashing password for user: %v", err)
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
 
-	// Initialize the FileNames slice
-	user.FileNames = []string{}
-
-	// Insert the user into the database
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
