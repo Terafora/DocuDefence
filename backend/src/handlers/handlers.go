@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"DocuDefense/src/models"
+	"DocuDefense/backend/src/models"
 	"context"
 	"encoding/json"
 	"io"

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"DocuDefense/src/handlers"
+	"DocuDefense/backend/src/handlers"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
