@@ -1,25 +1,39 @@
-import axios from 'axios';
+// src/services/userService.js
+import { getToken } from './authService';
+const BASE_URL = 'http://localhost:8000';
 
-const API_URL = 'http://localhost:8000';
+async function fetchWithAuth(url, options = {}) {
+  const token = getToken();
+  const headers = {
+    ...options.headers,
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
 
-// Fetch all users
-export const getUsers = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/users`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    throw error;
-  }
-};
+  return fetch(url, { ...options, headers });
+}
 
-// Create a new user
-export const createUser = async (user) => {
-  try {
-    const response = await axios.post(`${API_URL}/users`, user);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating user:', error);
-    throw error;
-  }
-};
+export async function getUsers() {
+  const response = await fetchWithAuth(`${BASE_URL}/users`);
+  if (!response.ok) throw new Error('Failed to fetch users');
+  return response.json();
+}
+
+export async function createUser(user) {
+  const response = await fetchWithAuth(`${BASE_URL}/users`, {
+    method: 'POST',
+    body: JSON.stringify(user),
+  });
+  if (!response.ok) throw new Error('Failed to create user');
+  return response.json();
+}
+
+export async function loginUser(credentials) {
+  const response = await fetch(`${BASE_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  if (!response.ok) throw new Error('Login failed');
+  return response.json();
+}

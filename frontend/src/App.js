@@ -1,28 +1,32 @@
+// src/App.js
 import React, { useEffect, useState } from 'react';
 import { getUsers, createUser } from './services/userService';
+import { isLoggedIn, setToken, clearToken } from './services/authService';
 import UserList from './components/UserList';
 import CreateUserForm from './components/CreateUserForm';
+import Login from './components/Login';
+import Logout from './components/Logout';
 
 function App() {
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({ first_name: '', surname: '', email: '', birthdate: '', password: '' });
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn());
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const users = await getUsers();
-        setUsers(users);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
+    if (loggedIn) {
+      const fetchUsers = async () => {
+        try {
+          const users = await getUsers();
+          setUsers(users);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        }
+      };
+      fetchUsers();
+    }
+  }, [loggedIn]);
 
-    fetchUsers();
-  }, []);
-
-  const handleInputChange = (e) => {
-    setNewUser({ ...newUser, [e.target.name]: e.target.value });
-  };
+  const handleInputChange = (e) => setNewUser({ ...newUser, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,15 +40,32 @@ function App() {
     }
   };
 
+  const handleLogin = (token) => {
+    setToken(token);
+    setLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    setLoggedIn(false);
+  };
+
   return (
     <div className="App">
       <h1>DocuDefense Frontend</h1>
-      <UserList users={users} />
-      <CreateUserForm 
-        newUser={newUser} 
-        handleInputChange={handleInputChange} 
-        handleSubmit={handleSubmit} 
-      />
+      {loggedIn ? (
+        <>
+          <Logout onLogout={handleLogout} />
+          <UserList users={users} />
+          <CreateUserForm 
+            newUser={newUser} 
+            handleInputChange={handleInputChange} 
+            handleSubmit={handleSubmit} 
+          />
+        </>
+      ) : (
+        <Login onLogin={handleLogin} />
+      )}
     </div>
   );
 }
