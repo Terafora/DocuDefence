@@ -328,12 +328,16 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate JWT
 	token, err := GenerateJWT(&foundUser)
 	if err != nil {
 		log.Printf("Error generating token for user %s: %v", foundUser.Email, err)
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
+
+	// Log the generated token to ensure it's valid
+	log.Printf("Generated token for user %s: %s", foundUser.Email, token)
 
 	log.Printf("Login successful for user: %v", foundUser)
 	w.WriteHeader(http.StatusOK)
