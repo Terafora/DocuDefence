@@ -1,47 +1,51 @@
 # DocuDefense
 ## Project Overview
 
-DocuDefense is a CRUD (Create, Read, Update, Delete) API developed in Golang and functions as a secure way to upload and sace PDF documents, primarily contracts. It manages user data using MongoDB, allowing clients to create, retrieve, update, and delete users through API endpoints. The project includes unit testing for each operation and implements authentication functionality.
+DocuDefense is a full-stack application that functions as a secure document management system, specifically designed for handling contracts in PDF format. The backend, built in Golang, provides a secure API for CRUD operations on users and file uploads, leveraging MongoDB for data storage. The frontend, built in React, offers a simple interface for users to manage their profile and documents.
 
-The API captures basic user details (first name, surname, email, and date of birth), with data securely stored in MongoDB. Future enhancements will include additional security measures.
+The API supports user authentication using JWT, ensuring that only authenticated users can perform actions like updating or deleting profiles, and uploading files.
 ***
 
 ## Features Completed
+### Backend Features:
 
-- CRUD Operations:
-   - Create a new user.
-   - Retrieve all users.
-   - Update an existing user by ID.
-   - Delete a user by ID.
+- **User CRUD Operations:**
+  - Create, Retrieve, Update, and Delete users.
+- **File Upload:**
+  - Upload PDF files and associate them with users.
+- **Authentication:**
+  - Basic login functionality using email and password.
+  - JWT-based token authentication for protecting routes.
+- **JWT Authentication:**
+  - Middleware to protect sensitive routes using JWT tokens.
+- **Docker**
 
-- Unit Testing:
-   - Tests are provided to ensure each CRUD operation functions as expected.
- 
-- File Upload:
-       - Functionality to upload a PDF file and associate it with a user.
-       - Note: Files will be stored on MongoDB, enhancing data management and retrieval.
+### Frontend Features:
 
-    - Basic Authentication:
-        - Adding middleware for email and password authentication.
-        - Users will be required to authenticate before accessing endpoints.
-
-     - JWT Authentication:
-        - The current plan is to upgrade basic authentication to JWT-based authentication for better security.
-
-- Features In Progress
-   
-   - Dockerization:
-       - Adding a Dockerfile for easy deployment and running the application in containers.
+- **User Management:**
+  - View a list of users.
+  - Create new users.
+  - Log in to view and update your profile.
+  - Delete your account.
+- **File Upload:**
+  - Upload PDF files to be associated with your user profile.
 
 
 ***
 
 ## Technology Stack
 
- - Backend Language: Golang
- - Router: [gorilla/mux](https://github.com/gorilla/mux)
- - Testing Framework: Go's built-in testing package
- - Database: MongoDB for data storage
+ - **Backend:**
+    - Language: **Golang**
+    - Router: [gorilla/mux](https://github.com/gorilla/mux)
+    - Testing Framework: Go's built-in testing package
+    - Database: **MongoDB** for data storage
+    - Authentication: **JWT**
+    - File Handling: **Multipart/FormData** file uploads
+  
+ - **Frontend:**
+   - Framework: **React**
+   - Styling: **SCSS Modules**
 
 ***
 
@@ -51,20 +55,24 @@ The API captures basic user details (first name, surname, email, and date of bir
 
 .
 ├── frontend
+│   ├── src
+│   │   ├── components              # React Components (Login, UserList, etc.)
+│   │   ├── services                # API service functions for frontend
+│   │   ├── App.js                  # Main application entry for React
+│   │   └── index.js                # Entry point for React rendering
 ├── backend
 │   ├── src
-│   │   ├── handlers                   # Contains the CRUD handler functions
-│   │   │   ├── handlers.go            # Main CRUD logic
-│   │   │   ├── jwtmiddleware.go       # JWT Authentication middleware
-│   │   │   └── middleware.go          # Basic authentication middleware
-│   │   └── models                     # Defines the User struct
-│   │       └── user.go                # User data structure
-│   ├── main.go                        # Entry point for the application
-│   ├── go.mod                         # Go modules (dependencies)
-│   ├── go.sum                         # Go module sums (dependency checksums)
-│   └── .env                           # Environment variables (e.g., JWT_SECRET, MongoDB URI)
-├── docker-compose.yml                 # For spinning up both services
-├── README.md                          # Project documentation
+│   │   ├── handlers                # Golang CRUD handler functions
+│   │   ├── models                  # Golang model definitions (User)
+│   │   ├── jwtmiddleware.go        # JWT middleware for protected routes
+│   │   ├── middleware.go           # Basic auth middleware (to be deprecated)
+│   │   └── main.go                 # Main application entry point
+│   ├── go.mod                      # Go modules (dependencies)
+│   └── .env                        # Environment variables (e.g., MongoDB URI, JWT_SECRET)
+├── Dockerfile                      # Dockerfile for Docker support (coming soon)
+├── docker-compose.yml              # Compose file for running MongoDB and the backend
+├── README.md                       # Project documentation
+
 
 ```
 
@@ -76,7 +84,9 @@ The API captures basic user details (first name, surname, email, and date of bir
 | GET    | `/users`          | Retrieves all users        | N/A                                  |
 | POST   | `/users`          | Creates a new user         | `{ "id": "1", "first_name": "...", ... }` |
 | PUT    | `/users/{id}`     | Updates an existing user   | `{ "first_name": "Updated", ... }`   |
-| DELETE | `/users/{id}`     | Deletes a user by ID       | N/A       
+| DELETE | `/users/{id}`     | Deletes a user by ID       | N/A 
+| POST    | `/login`    | Logs in and retrieves a JWT token   | `{ "email": "...", "password": "..."}`   |
+| POST | `/users/{id}/upload`     | Uploads a PDF file for a user      | Multipart form with `contract` key 
 
 ### Example Payload for Creating a User
 
@@ -263,26 +273,34 @@ Here’s a list of Go libraries used in the project:
 
 ## Planned Features
 
-  - Dockerization: Add a Dockerfile for easy deployment.
   - Additional Features:
      - Pagination, filtering, and search functionality for users.
      - CORS middleware and rate-limiting to enhance security and scalability.
 
 ***
 
-## Installation and Setup
+## Running the Project
+Prerequisites:
 
-1.Clone the repository:
+ - **Golang** installed (1.16+)
+ - **MongoDB** instance running locally or remotely
+ - **Node.js** (v14+) for the React frontend
+ - **Docker** (optional, for containerization)
 
-```bash
+Steps to Run:
+
+ 1. **Clone the repository:**
+
+ ```bash
 
 git clone https://github.com/your-username/DocuDefense.git
-
+cd DocuDefense
 ```
 
-2. Install dependencies:
+2. **Set up Backend:**
 
-Ensure that Golang is installed on your machine. Then, navigate to the project folder and run:
+- Ensure you have a .env file with your MongoDB URI and JWT secret.
+- Install Go dependencies:
 
 ```bash
 
@@ -290,29 +308,48 @@ go mod tidy
 
 ```
 
-This will install the required dependencies.
-
-3. Run the application:
-
-Start the server:
+- Run the backend:
 
 ```bash
 
-go run src/main.go
-
-The API will be running on http://localhost:8000.
-
+    go run src/main.go
 ```
 
-4. Test the API:
+3. **Set up Frontend:**
 
-You can test the API endpoints using tools like Postman or curl. For example, to create a user:
+- Navigate to the frontend directory:
 
 ```bash
 
-curl -X POST -d '{"id":"1","first_name":"Test","surname":"User","email":"testuser@code.com","birthdate":"2024-10-23"}' http://localhost:8000/users
+        cd frontend
+        npm install
+        npm start
+```
+
+- The frontend should now be running at `http://localhost:3000`.
+
+***
+
+## Docker Setup (Optional)
+
+If you prefer to use Docker for containerizing the application, you can follow these steps:
+
+**1. Dockerfile**
+
+The Dockerfile is already provided in the project for both the backend and frontend. The Dockerfile is located at the root of the `backend`  directory.
+
+**2. Build Docker Image**
+
+To build the Docker image for the backend, navigate to the backend directory and run:
+
+```bash
+
+docker build -t docudefense-backend .
 
 ```
+**Work In Progress**
+
+***
 
 ## Contributing
 
