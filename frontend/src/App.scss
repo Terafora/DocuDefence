@@ -1,0 +1,62 @@
+// Universal styles for all elements
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+// Body styling
+body {
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+// Media elements
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+// Form elements
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+// Typography
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+
+  // Specific typography settings
+  p {
+    text-wrap: pretty;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
+}
+
+// Root containers for app isolation
+#root,
+#__next {
+  isolation: isolate;
+}
