@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DocuDefense/src/handlers"
+	"DocuDefense/backend/src/handlers"
 	"context"
 	"fmt"
 	"log"
