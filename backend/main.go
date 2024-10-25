@@ -1,13 +1,12 @@
 package main
 
 import (
+	"DocuDefense/src/handlers"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-
-	"DocuDefense/backend/src/handlers"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
