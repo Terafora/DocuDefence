@@ -1,15 +1,12 @@
 import React from 'react';
-import { deleteUser } from '../services/userService';
 
-const UserProfileDelete = ({ userId }) => {
-
+const UserProfileDelete = ({ userId, onDelete }) => {
   const handleDelete = async () => {
     const confirmation = window.confirm('Are you sure you want to delete your account?');
     if (confirmation) {
       try {
-        await deleteUser(userId);
+        await onDelete(userId); // Call the onDelete function from props
         alert('Account deleted successfully');
-        // Implement logout or redirect logic after deletion
       } catch (error) {
         console.error('Error deleting account:', error);
       }

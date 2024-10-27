@@ -63,6 +63,7 @@ function App() {
             await deleteUser(userId);
             const updatedUsers = await getUsers();
             setUsers(updatedUsers);
+            setCurrentUser(null); // Clear current user if they delete their own account
         } catch (error) {
             console.error('Error deleting account:', error);
         }
@@ -85,12 +86,16 @@ function App() {
                 <>
                     <Logout onLogout={handleLogout} />
                     <h2>Logged in as: {userEmail || 'No current user found'}</h2>
-                    <UserList users={users} userEmail={userEmail} />
+                    <UserList 
+                        users={users} 
+                        userEmail={userEmail} 
+                        onUpdate={handleUpdate} 
+                        onDelete={handleDelete} 
+                    />
 
                     {currentUser && (
                         <>
                             <h3>Edit Your Profile</h3>
-                            {/* Pass handleUpdate and handleDelete as props */}
                             <UserProfileForm user={currentUser} onUpdate={handleUpdate} />
                             <UserProfileDelete userId={currentUser.id} onDelete={handleDelete} />
                         </>

@@ -1,27 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const UserProfileDelete = ({ onDelete }) => {
-  const handleDelete = async () => {
-    const confirmation = window.confirm('Are you sure you want to delete your account?');
-    if (confirmation) {
-      try {
-        await onDelete(); // Call the onDelete prop function
-        alert('Account deleted successfully');
-        // Optionally implement logout or redirect logic after deletion
-      } catch (error) {
-        console.error('Error deleting account:', error);
-      }
+const UserProfileForm = ({ user, onUpdate }) => {
+  const [updatedData, setUpdatedData] = useState(user);
+
+  const handleChange = (e) => {
+    setUpdatedData({
+      ...updatedData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await onUpdate(user.id, updatedData); // Use the onUpdate prop function
+      alert('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
     }
   };
 
   return (
-    <div>
-      <h3>Account Management</h3>
-      <button onClick={handleDelete} style={{ color: 'red' }}>
-        Delete Account
-      </button>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="first_name"
+        value={updatedData.first_name}
+        onChange={handleChange}
+      />
+      <input
+        type="text"
+        name="surname"
+        value={updatedData.surname}
+        onChange={handleChange}
+      />
+      <button type="submit">Update Profile</button>
+    </form>
   );
 };
 
-export default UserProfileDelete;
+export default UserProfileForm;

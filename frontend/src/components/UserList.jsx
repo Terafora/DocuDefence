@@ -1,7 +1,6 @@
-// src/components/UserList.jsx
 import React from 'react';
 
-function UserList({ users, userEmail }) {
+function UserList({ users, userEmail, onUpdate, onDelete }) {
     return (
         <div>
             <h2>Users</h2>
@@ -9,10 +8,14 @@ function UserList({ users, userEmail }) {
                 {users.map((user) => (
                     <li key={user.id}>
                         {user.first_name} {user.surname} - {user.email}
-                        {user.email === userEmail && ( // Show buttons if user is the owner
+                        {user.email === userEmail && ( 
                             <>
-                                <button onClick={() => console.log("Update clicked for", user.id)}>Update</button>
-                                <button onClick={() => console.log("Delete clicked for", user.id)}>Delete</button>
+                                <button onClick={() => onUpdate(user.id, { first_name: user.first_name, surname: user.surname })}>
+                                    Update
+                                </button>
+                                <button onClick={() => onDelete(user.id)}>
+                                    Delete
+                                </button>
                             </>
                         )}
                     </li>
