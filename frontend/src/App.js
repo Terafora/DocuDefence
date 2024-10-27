@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { getUsers, createUser, updateUser, deleteUser } from './services/userService'; // Include updateUser and deleteUser
+import { getUsers, createUser, updateUser, deleteUser } from './services/userService';
 import { isLoggedIn, setToken, clearToken, getUserEmail } from './services/authService';
 import UserList from './components/UserList';
 import CreateUserForm from './components/CreateUserForm';
 import Login from './components/Login';
 import Logout from './components/Logout';
-import UserProfileForm from './components/UserProfileForm';  // For updating user info
-import UserProfileDelete from './components/UserProfileDelete'; // For deleting user account
+import UserProfileForm from './components/UserProfileForm';
+import UserProfileDelete from './components/UserProfileDelete';
 
 function App() {
     const [users, setUsers] = useState([]);
     const [newUser, setNewUser] = useState({ first_name: '', surname: '', email: '', birthdate: '', password: '' });
     const [loggedIn, setLoggedIn] = useState(isLoggedIn());
-    const userEmail = getUserEmail(); // Get the logged-in user's email
-    const [currentUser, setCurrentUser] = useState(null); // Store the current user
+    const userEmail = getUserEmail();
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         if (loggedIn) {
@@ -55,7 +55,27 @@ function App() {
     const handleLogout = () => {
         clearToken();
         setLoggedIn(false);
-        setCurrentUser(null); // Reset current user on logout
+        setCurrentUser(null);
+    };
+
+    const handleDelete = async (userId) => {
+        try {
+            await deleteUser(userId);
+            const updatedUsers = await getUsers();
+            setUsers(updatedUsers);
+        } catch (error) {
+            console.error('Error deleting account:', error);
+        }
+    };
+
+    const handleUpdate = async (userId, updatedData) => {
+        try {
+            await updateUser(userId, updatedData);
+            const updatedUsers = await getUsers();
+            setUsers(updatedUsers);
+        } catch (error) {
+            console.error('Error updating user:', error);
+        }
     };
 
     return (
@@ -64,15 +84,15 @@ function App() {
             {loggedIn ? (
                 <>
                     <Logout onLogout={handleLogout} />
-                    <h2>Logged in as: {userEmail || 'No current user found'}</h2> {/* Display the current user */}
+                    <h2>Logged in as: {userEmail || 'No current user found'}</h2>
                     <UserList users={users} userEmail={userEmail} />
-                    
+
                     {currentUser && (
                         <>
                             <h3>Edit Your Profile</h3>
-                            {/* Render update and delete buttons */}
-                            <UserProfileForm user={currentUser} />
-                            <UserProfileDelete userId={currentUser.id} />
+                            {/* Pass handleUpdate and handleDelete as props */}
+                            <UserProfileForm user={currentUser} onUpdate={handleUpdate} />
+                            <UserProfileDelete userId={currentUser.id} onDelete={handleDelete} />
                         </>
                     )}
                     <CreateUserForm 
