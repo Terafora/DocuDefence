@@ -15,7 +15,7 @@ type User struct {
 	FileNames []string           `json:"file_names" bson:"file_names"`
 }
 
-// Hashes the user's password before storing it
+// HashPassword hashes the user's password using bcrypt
 func (u *User) HashPassword(password string) error {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
@@ -25,7 +25,7 @@ func (u *User) HashPassword(password string) error {
 	return nil
 }
 
-// Compares the user's password with the given password
+// CheckPassword compares the hashed password with the provided password
 func (u *User) CheckPassword(password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 }

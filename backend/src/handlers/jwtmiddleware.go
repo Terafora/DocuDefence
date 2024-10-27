@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// JWTAuthMiddleware validates the JWT token and attaches the claims to the request context
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -38,19 +40,14 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 			return jwtKey, nil // Ensure this key is the same as the one used to sign the token
 		})
 
-		// Check if there was an error parsing the token
-		if err != nil {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		// Check if the token is valid and not expired
-		if !token.Valid || time.Now().After(claims.ExpiresAt.Time) {
+		// Check if there was an error parsing the token or if it's invalid
+		if err != nil || !token.Valid || time.Now().After(claims.ExpiresAt.Time) {
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return
 		}
 
-		// Token is valid, pass the request to the next handler
-		next.ServeHTTP(w, r)
+		// Add claims to the request context for access in handlers
+		ctx := context.WithValue(r.Context(), "userClaims", claims)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
