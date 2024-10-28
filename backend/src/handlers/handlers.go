@@ -51,7 +51,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userList)
 }
 
-// Create a new user
+// Updated CreateUser function
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 
@@ -62,9 +62,9 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.ID.IsZero() {
-		user.ID = primitive.NewObjectID()
-	}
+	// Ensure user has a unique ID and initialize file_names as an empty array
+	user.ID = primitive.NewObjectID()
+	user.FileNames = []string{} // Initialize file_names as an empty array
 
 	if err := user.HashPassword(user.Password); err != nil {
 		log.Printf("Error hashing password for user: %v", err)
@@ -82,8 +82,51 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Password = ""
+	user.Password = "" // Remove password before returning response
 	json.NewEncoder(w).Encode(user)
+}
+
+// GetUserByEmail retrieves a user document by email and returns their ID
+func GetUserByEmail(w http.ResponseWriter, r *http.Request) {
+	email := r.URL.Query().Get("email")
+	if email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	err := usersCollection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		log.Printf("User not found for email %s: %v", email, err)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	response := map[string]string{"id": user.ID.Hex()}
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetUserFiles retrieves files for a specific user by ID
+func GetUserFiles(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userID := params["id"]
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		log.Printf("Invalid user ID format: %v", err)
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	err = usersCollection.FindOne(context.Background(), bson.M{"_id": userIDObj}).Decode(&user)
+	if err != nil {
+		log.Printf("User not found for ID %s: %v", userID, err)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string][]string{"file_names": user.FileNames})
 }
 
 // UpdateUser updates the user information if the requester is the account owner
@@ -91,7 +134,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID := params["id"]
 
-	// Retrieve the user claims from the JWT token
 	claims, ok := r.Context().Value("userClaims").(*Claims)
 	if !ok || claims == nil {
 		log.Println("Unauthorized access: Unable to retrieve user claims")
@@ -107,7 +149,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the user by ID
 	var targetUser models.User
 	err = usersCollection.FindOne(context.Background(), bson.M{"_id": userIDObj}).Decode(&targetUser)
 	if err != nil {
@@ -116,7 +157,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ensure the user can only update their own account
 	if requesterEmail != targetUser.Email {
 		log.Printf("Unauthorized update attempt by %s on account %s", requesterEmail, targetUser.Email)
 		http.Error(w, "You are not authorized to update this account", http.StatusForbidden)
@@ -131,7 +171,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Hash the password if it has been updated
 	if updatedUser.Password != "" {
 		if err := updatedUser.HashPassword(updatedUser.Password); err != nil {
 			log.Printf("Error hashing updated password: %v", err)
@@ -140,17 +179,15 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Prepare the update fields
 	update := bson.M{
 		"$set": bson.M{
 			"first_name": updatedUser.FirstName,
 			"surname":    updatedUser.Surname,
 			"email":      updatedUser.Email,
-			"password":   updatedUser.Password, // Assumes password is already hashed if provided
+			"password":   updatedUser.Password,
 		},
 	}
 
-	// Apply the update
 	filter := bson.M{"_id": userIDObj}
 	result, err := usersCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil || result.MatchedCount == 0 {
@@ -163,7 +200,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedUser)
 }
 
-// Delete user (only if the requester is the account owner)
+// DeleteUser deletes the user if they are the account owner
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID := params["id"]
@@ -205,39 +242,9 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Search for users by first name or surname
-func SearchUsers(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	filter := bson.M{}
-
-	if firstName, ok := queryParams["first_name"]; ok {
-		filter["first_name"] = bson.M{"$regex": firstName[0], "$options": "i"}
-	}
-	if surname, ok := queryParams["surname"]; ok {
-		filter["surname"] = bson.M{"$regex": surname[0], "$options": "i"}
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	cursor, err := usersCollection.Find(ctx, filter)
-	if err != nil {
-		http.Error(w, "Error fetching users", http.StatusInternalServerError)
-		return
-	}
-	defer cursor.Close(ctx)
-
-	var users []models.User
-	if err := cursor.All(ctx, &users); err != nil {
-		http.Error(w, "Error decoding users", http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(users)
-}
-
-// Upload PDF file for a user
+// UploadFile allows a user to upload a PDF file
 func UploadFile(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20) // 10MB size limit
 	if err != nil {
 		log.Printf("Error parsing form: %v", err)
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
@@ -252,16 +259,27 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// Check if the file is a PDF
 	if handler.Header.Get("Content-Type") != "application/pdf" {
 		log.Printf("Invalid file type: %v, expected application/pdf", handler.Header.Get("Content-Type"))
 		http.Error(w, "Only PDF files are allowed", http.StatusBadRequest)
 		return
 	}
 
+	// Retrieve user ID from URL
 	params := mux.Vars(r)
 	userID := params["id"]
-	filePath := "./uploads/" + handler.Filename
+	log.Printf("Received upload request for user ID: %s", userID)
 
+	userIDObj, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		log.Printf("Invalid user ID format: %v", err)
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
+	// Save file to disk
+	filePath := "./uploads/" + handler.Filename
 	err = os.MkdirAll("./uploads", os.ModePerm)
 	if err != nil {
 		log.Printf("Error creating uploads directory: %v", err)
@@ -284,24 +302,70 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Retry logic for updating the file list in MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	update := bson.M{"$push": bson.M{"filenames": handler.Filename}}
-	result, err := usersCollection.UpdateOne(ctx, bson.M{"_id": userID}, update)
-	if err != nil || result.MatchedCount == 0 {
-		log.Printf("Error updating user's file list for user %s: %v", userID, err)
-		http.Error(w, "Error updating file list", http.StatusInternalServerError)
+	update := bson.M{"$push": bson.M{"file_names": handler.Filename}}
+	attempts := 3
+	for attempts > 0 {
+		result, err := usersCollection.UpdateOne(ctx, bson.M{"_id": userIDObj}, update)
+		if err == nil && result.MatchedCount > 0 {
+			// Success
+			log.Printf("Successfully uploaded file for user %s: %s", userID, handler.Filename)
+			json.NewEncoder(w).Encode(map[string]string{"message": "File uploaded"})
+			return
+		} else if err != nil {
+			log.Printf("Error updating user's file list, retrying... Attempts left: %d, Error: %v", attempts-1, err)
+			time.Sleep(500 * time.Millisecond) // Short delay before retrying
+			attempts--
+		} else {
+			http.Error(w, "Error updating file list", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Final failure response if retries are exhausted
+	log.Printf("Failed to update user's file list after retries for user %s", userID)
+	http.Error(w, "Failed to update file list after retries", http.StatusInternalServerError)
+}
+
+// Search for users by first name or surname
+func SearchUsers(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	filter := bson.M{}
+
+	// Check if there is a first_name or surname in the query parameters
+	if firstName, ok := queryParams["first_name"]; ok {
+		filter["first_name"] = bson.M{"$regex": firstName[0], "$options": "i"}
+	}
+	if surname, ok := queryParams["surname"]; ok {
+		filter["surname"] = bson.M{"$regex": surname[0], "$options": "i"}
+	}
+
+	// Search users in MongoDB with the filter
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := usersCollection.Find(ctx, filter)
+	if err != nil {
+		http.Error(w, "Error fetching users", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	// Decode the result into a slice of User objects
+	var users []models.User
+	if err := cursor.All(ctx, &users); err != nil {
+		http.Error(w, "Error decoding users", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Successfully uploaded file for user %s: %s", userID, handler.Filename)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "File uploaded",
-	})
+	// Return the matched users as JSON
+	json.NewEncoder(w).Encode(users)
 }
 
-// Generate JWT token for authenticated user
+// GenerateJWT generates a JWT token for authenticated users
 func GenerateJWT(user *models.User) (string, error) {
 	expirationTime := time.Now().Add(1 * time.Hour)
 	claims := &Claims{
@@ -315,7 +379,7 @@ func GenerateJWT(user *models.User) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
-// Login user and generate JWT
+// LoginUser logs in a user and generates a JWT
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var loginData struct {
 		Email    string `json:"email"`

@@ -1,67 +1,102 @@
 // src/components/UserDashboard.js
-import React, { useEffect, useState } from 'react';
-import { getUsers, updateUser, deleteUser } from '../services/userService';
-import UserList from './UserList';
-import UserProfileForm from './UserProfileForm';
-import UserProfileDelete from './UserProfileDelete';
-import Logout from './Logout';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { uploadFile, getUserFiles, fetchUserIDByEmail } from '../services/userService';
 import { getUserEmail } from '../services/authService';
 
-function UserDashboard({ onLogout }) {
-    const [users, setUsers] = useState([]);
-    const [currentUser, setCurrentUser] = useState(null);
-    const userEmail = getUserEmail();
+function UserDashboard() {
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [files, setFiles] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [userId, setUserId] = useState(null);
+
+    const initializeUserID = useCallback(async () => {
+        const email = getUserEmail();
+        if (!email) {
+            console.error("No email found for user.");
+            return;
+        }
+        try {
+            const userData = await fetchUserIDByEmail(email);
+            setUserId(userData.id);
+            console.log("Fetched user ID:", userData.id);
+        } catch (error) {
+            console.error('Error fetching user ID:', error);
+        }
+    }, []);
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const users = await getUsers();
-                setUsers(users);
-                
-                // Find the logged-in user from the list of users
-                const loggedInUser = users.find(user => user.email === userEmail);
-                setCurrentUser(loggedInUser);
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            }
-        };
-        fetchUsers();
-    }, [userEmail]);
+        initializeUserID();
+    }, [initializeUserID]);
 
-    const handleDelete = async (userId) => {
-        try {
-            await deleteUser(userId);
-            const updatedUsers = await getUsers();
-            setUsers(updatedUsers);
-            setCurrentUser(null); // Clear current user if they delete their own account
-        } catch (error) {
-            console.error('Error deleting account:', error);
+    const fetchUserFiles = useCallback(async () => {
+        if (!userId) {
+            console.error("User ID is undefined. Unable to fetch files.");
+            return;
         }
-    };
-
-    const handleUpdate = async (userId, updatedData) => {
         try {
-            await updateUser(userId, updatedData);
-            const updatedUsers = await getUsers();
-            setUsers(updatedUsers);
+            setLoading(true);
+            const userData = await getUserFiles(userId);
+            setFiles(userData.file_names || []);
+            console.log("Fetched files for user ID:", userId);
         } catch (error) {
-            console.error('Error updating user:', error);
+            console.error('Error fetching user files:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (userId) {
+            fetchUserFiles();
+        }
+    }, [userId, fetchUserFiles]);
+
+    const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
+
+    const handleUpload = async () => {
+        if (!selectedFile) {
+            alert('Please select a file first');
+            return;
+        }
+        if (!userId) {
+            console.error("User ID is undefined. Unable to upload file.");
+            return;
+        }
+        try {
+            setLoading(true);
+            console.log("Uploading file for user ID:", userId);
+            await uploadFile(userId, selectedFile);
+            alert('File uploaded successfully');
+            setSelectedFile(null);
+            fetchUserFiles();
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div>
-            <Logout onLogout={onLogout} />
-            <h2>Logged in as: {userEmail || 'No current user found'}</h2>
-            <UserList users={users} userEmail={userEmail} onUpdate={handleUpdate} onDelete={handleDelete} />
+            <h2>User Dashboard</h2>
+            <div>
+                <input type="file" accept="application/pdf" onChange={handleFileChange} />
+                <button onClick={handleUpload} disabled={loading}>Upload PDF</button>
+            </div>
 
-            {currentUser && (
-                <>
-                    <h3>Edit Your Profile</h3>
-                    <UserProfileForm user={currentUser} onUpdate={handleUpdate} />
-                    <UserProfileDelete userId={currentUser.id} onDelete={handleDelete} />
-                </>
-            )}
+            {loading && <p>Loading...</p>}
+
+            <h3>My Files</h3>
+            <ul>
+                {files.length > 0 ? (
+                    files.map((filename, index) => (
+                        <li key={index}>{filename}</li>
+                    ))
+                ) : (
+                    <p>No files uploaded.</p>
+                )}
+            </ul>
         </div>
     );
 }

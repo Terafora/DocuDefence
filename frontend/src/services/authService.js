@@ -33,18 +33,16 @@ export function getUserEmail() {
         console.error("No token found in localStorage.");
         return null;
     }
-
     try {
-        const decoded = jwtDecode(token.split(" ")[1]); // Only decode the actual token, without "Bearer"
-        console.log("Decoded token, extracted email:", decoded.email); // Logging the decoded email
+        const decoded = jwtDecode(token.split(" ")[1]);  // Only decode actual token
+        console.log("Decoded token, extracted email:", decoded.email);
         return decoded.email;
     } catch (error) {
         console.error("Invalid token:", error.message);
-        clearToken();  // Clear the token if it's invalid
+        clearToken();
         return null;
     }
 }
-
 async function fetchWithAuth(url, options = {}) {
     const token = getToken();
     const headers = {

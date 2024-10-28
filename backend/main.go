@@ -59,9 +59,14 @@ func main() {
 	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
 	r.HandleFunc("/login", handlers.LoginUser).Methods("POST")
 
+	// Endpoint for fetching user data by email (e.g., for user ID lookup)
+	r.HandleFunc("/users/email", handlers.GetUserByEmail).Methods("GET")
+
+	// User-specific routes that require JWT authentication
 	r.Handle("/users/{id}", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.UpdateUser))).Methods("PUT")
 	r.Handle("/users/{id}", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DeleteUser))).Methods("DELETE")
 	r.Handle("/users/{id}/upload", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.UploadFile))).Methods("POST")
+	r.Handle("/users/{id}/files", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.GetUserFiles))).Methods("GET")
 	r.HandleFunc("/search", handlers.SearchUsers).Methods("GET")
 
 	c := cors.New(cors.Options{

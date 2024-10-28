@@ -1,41 +1,88 @@
+
 import React, { useState } from 'react';
-import Login from './Login';
-import CreateUserForm from './CreateUserForm';
-import { createUser } from '../services/userService'; // Import createUser from userService
+import { loginUser, createUser } from '../services/userService';
+import { setToken } from '../services/authService';
 
 function AuthPanel({ onLogin }) {
-    const [newUser, setNewUser] = useState({ first_name: '', surname: '', email: '', birthdate: '', password: '' });
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [formData, setFormData] = useState({
+        first_name: '',
+        surname: '',
+        email: '',
+        birthdate: '',
+        password: '',
+    });
 
-    const handleInputChange = (e) => setNewUser({ ...newUser, [e.target.name]: e.target.value });
+    const toggleForm = () => setIsRegistering(!isRegistering);
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createUser(newUser);
-            setNewUser({ first_name: '', surname: '', email: '', birthdate: '', password: '' });
-            alert('Account created successfully. Please log in.');
+            if (isRegistering) {
+                await createUser(formData);
+                alert('Account created successfully. You may now log in.');
+                setIsRegistering(false);
+            } else {
+                const { token } = await loginUser({ email: formData.email, password: formData.password });
+                setToken(token);
+                onLogin();
+            }
         } catch (error) {
-            console.error('Error creating user:', error);
+            console.error(isRegistering ? 'Registration failed:' : 'Login failed:', error);
         }
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px' }}>
-            {/* Login form */}
-            <div style={{ width: '45%' }}>
-                <h2>Login</h2>
-                <Login onLogin={onLogin} />
-            </div>
-
-            {/* Create New User form */}
-            <div style={{ width: '45%' }}>
-                <h2>Create a New User</h2>
-                <CreateUserForm 
-                    newUser={newUser} 
-                    handleInputChange={handleInputChange} 
-                    handleSubmit={handleSubmit} 
+        <div>
+            <h2>{isRegistering ? 'Register' : 'Login'}</h2>
+            <form onSubmit={handleSubmit}>
+                {isRegistering && (
+                    <>
+                        <input
+                            type="text"
+                            name="first_name"
+                            placeholder="First Name"
+                            value={formData.first_name}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="surname"
+                            placeholder="Surname"
+                            value={formData.surname}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="date"
+                            name="birthdate"
+                            value={formData.birthdate}
+                            onChange={handleInputChange}
+                        />
+                    </>
+                )}
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={handleInputChange}
                 />
-            </div>
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                />
+                <button type="submit">{isRegistering ? 'Register' : 'Login'}</button>
+            </form>
+            <button onClick={toggleForm}>
+                {isRegistering ? 'Already have an account? Login' : 'Create an account'}
+            </button>
         </div>
     );
 }
