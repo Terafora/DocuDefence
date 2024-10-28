@@ -1,0 +1,33 @@
+// Variables for footer styling
+$footer-bg-color: #000;
+$footer-text-color: #ffffff;
+$footer-link-color: lighten($footer-text-color, 20%);
+$footer-link-hover-color: lighten($footer-link-color, 40%);
+
+// Footer container styling
+.custom-footer {
+  background-color: $footer-bg-color;
+  color: $footer-text-color;
+  position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    align-content: center;
+
+
+  .footer-link {
+    color: $footer-link-color;
+    text-decoration: none;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: $footer-link-hover-color;
+      text-decoration: underline;
+    }
+  }
+
+  .text-uppercase {
+    font-weight: bold;
+  }
+}

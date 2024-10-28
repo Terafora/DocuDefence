@@ -10,6 +10,8 @@
 body {
   line-height: 1;
   -webkit-font-smoothing: antialiased;
+  background-color: #e0e1e2;
+  color: #333;
 }
 
 // Media elements
@@ -39,6 +41,8 @@ h4,
 h5,
 h6 {
   overflow-wrap: break-word;
+  margin: 0;
+  color: inherit;
 
   // Specific typography settings
   p {
@@ -61,21 +65,43 @@ h6 {
   isolation: isolate;
 }
 
-// Sidebar width variable
-$sidebar-width: 200px;
+// Sidebar width variable (matching navbar width)
+$sidebar-width: 300px;
 
-// Base styling for the app container
+// Sidebar width variable
+$sidebar-width: 300px;
+
+// Main app layout adjustments
+// Sidebar width variable
+$sidebar-width: 300px;
+
+// Main app layout adjustments
 .App {
   display: flex;
+  flex-direction: row;
 }
 
 // Styling for main content
 .main-content {
-  padding: 20px;
+  padding: 1rem;
+  width: 100%;
 
   // For larger screens, offset the main content to account for the sidebar
   @media (min-width: 992px) {
-    margin-left: $sidebar-width; // Adjust this to match your sidebar width
-    width: calc(100% - #{$sidebar-width}); // Ensures it takes the remaining space
+    margin-left: $sidebar-width;
+    width: calc(100% - #{$sidebar-width});
+  }
+
+  // Add padding-top on smaller screens to avoid overlap with the navbar
+  @media (max-width: 991px) {
+    padding-top: 4rem;
+  }
+}
+
+@media  (max-width: 991px) {
+  .main-content {
+    position:absolute;
+    top: 4rem;
+    z-index: -1;
   }
 }

@@ -1,0 +1,35 @@
+.container {
+    max-width: 850px;
+}
+
+.about-section {
+    padding: 1rem 0;
+    border-bottom: 1px solid #e9ecef;
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.about-title {
+    font-weight: 600;
+    color: #2b2b2b;
+}
+
+.about-text {
+    color: #495057;
+}
+
+.about-list {
+    padding: 0;
+    font-weight: 500;
+    line-height: 1.7;
+
+    li {
+        margin-bottom: 0.75rem;
+
+        strong {
+            color: #212529;
+        }
+    }
+}

@@ -5,6 +5,7 @@ import UserDashboard from './components/UserDashboard';
 import About from './components/About';
 import Navbar from './components/Navbar';
 import Home from './components/Homepage';
+import Footer from './components/Footer';
 import { isLoggedIn, clearToken, getUserEmail } from './services/authService';
 import './App.scss';
 
@@ -44,9 +45,9 @@ function App() {
 
     return (
         <Router>
-            <div className="App">
+            <div className="App d-lg-flex">
                 <Navbar loggedIn={loggedIn} currentUser={currentUser} onLogout={handleLogout} onShowLogin={handleShowLogin} />
-                <div className="main-content">
+                <div className="main-content flex-grow-1 p-4">
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/about" element={<About />} />
@@ -56,6 +57,7 @@ function App() {
                     </Routes>
                 </div>
                 {showModal && <AuthPanel onLogin={() => setLoggedIn(true)} onClose={handleCloseLogin} />}
+                <Footer />
             </div>
         </Router>
     );

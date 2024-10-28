@@ -1,83 +1,82 @@
-$navbar-bg-color: #343a40;
-$wave-color: #343a40;
-$wave-opacity: 0.9;
-$sidebar-width: 200px;
+// Base variables
+$navbar-bg-color: #662d91;
+$navbar-accent-color: #e33561;
+$navbar-width: 300px;
+$navbar-padding: 20px;
 
-// Base styling for the entire navbar
-.navbar-wrapper {
+// Sidebar navbar for large screens
+.custom-navbar.d-lg-flex {
+  background-color: $navbar-bg-color;
+  width: $navbar-width;
+  color: #ffffff;
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
-  width: $sidebar-width;
-  background-color: $navbar-bg-color;
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px 0;
-  overflow: hidden;
+  height: 100vh;
+  padding: $navbar-padding;
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
 }
 
-// Styling for the navbar content links
-.navbar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding-left: 20px;
+// Brand styling
+.navbar-brand {
+  font-size: 2rem;
+  font-weight: bold;
+  padding-bottom: 1rem;
 }
 
-// Navbar items
-.navbar-item {
+// Navbar menu styles for the sidebar (large screens)
+.navbar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  .nav-item {
+    .nav-link, .btn-link {
+      color: #ffffff;
+      font-size: 1.2rem;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: lighten($navbar-accent-color, 10%);
+      }
+    }
+  }
+}
+
+// Footer styling for the sidebar
+.navbar-footer {
   color: #ffffff;
-  text-decoration: none;
-  font-size: 18px;
+  font-weight: bold;
+  background-color: $navbar-accent-color;
+  padding: 0.5rem 1rem;
+  clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+  margin-top: auto;
 
-  &:hover {
-    color: lighten(#ffffff, 20%);
+  // Hide on medium and smaller screens
+  .d-lg-flex & {
+    display: block;
+  }
+
+  .d-lg-none & {
+    display: none;
   }
 }
-
-// Wave layers
-.wave-layer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  background-color: $wave-color;
-  opacity: $wave-opacity;
-  clip-path: polygon(
-    95% 0%, 100% 0%, 100% 20%, 95% 25%, 100% 30%, 95% 35%, 100% 40%, 95% 45%,
-    100% 50%, 95% 55%, 100% 60%, 95% 65%, 100% 70%, 95% 75%, 100% 80%, 95% 85%,
-    100% 90%, 95% 95%, 100% 100%, 95% 100%
-  );
-  animation: waveAnimation 8s ease-in-out infinite;
-}
-
-.wave-layer.wave1 {
-  animation-duration: 8s;
-}
-
-.wave-layer.wave2 {
-  animation-duration: 12s;
-  opacity: $wave-opacity - 0.2;
-}
-
-.wave-layer.wave3 {
-  animation-duration: 16s;
-  opacity: $wave-opacity - 0.4;
-}
-
-// Wave animation keyframes
-@keyframes waveAnimation {
-  0% {
-    transform: translateY(0);
+ @media  (max-width: 991px) {
+  .custom-navbar {
+    display: none;
   }
-  50% {
-    transform: translateY(-20px); // Slightly shifts up
-  }
-  100% {
-    transform: translateY(0);
-  }
+    
+  .navbar-sc{
+    position: absolute;
+    top: 0;
+    right:0;
+    left:0;
+    background-color: #662d91;
 }
+ }

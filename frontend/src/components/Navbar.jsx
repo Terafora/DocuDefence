@@ -1,35 +1,103 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/navbar.scss';
 
 function Navbar({ loggedIn, currentUser, onLogout, onShowLogin }) {
     const navigate = useNavigate();
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (currentUser) console.log("Current User:", currentUser);
+    }, [currentUser]);
 
     const handleLogout = () => {
         onLogout();
-        // Redirect to home or another appropriate page after logout
         navigate('/');
+        setIsOpen(false);
     };
 
     return (
-        <nav className="navbar-wrapper">
-            <div className="navbar">
-                <div className="navbar-list">
-                    <Link to="/" className="navbar-item">Home</Link>
-                    <Link to="/about" className="navbar-item">About</Link>
-                    {loggedIn && <Link to="/dashboard" className="navbar-item">Dashboard</Link>}
-                    {loggedIn ? (
-                        <button onClick={handleLogout} className="navbar-item">Logout</button>
-                    ) : (
-                        <button onClick={onShowLogin} className="navbar-item">Login</button>
+        <>
+            {/* Sidebar version for large screens (lg and up) */}
+            <nav className="custom-navbar d-none d-lg-flex flex-column">
+                <Link to="/" className="navbar-brand text-center mb-3 navbar-money">DocuDefense</Link>
+                <ul className="navbar-menu navbar-nav flex-column w-100 justify-content-between">
+                    {loggedIn && currentUser && (
+                        <li className="nav-item">
+                            <span className="nav-link">Welcome back!</span>
+                        </li>
                     )}
-                    {loggedIn && currentUser && <span className="navbar-item">Welcome back, {currentUser.first_name}</span>}
+                    <li className="nav-item">
+                        <Link to="/" className="nav-link">Home</Link>
+                    </li>
+                    <li className="nav-item">
+                        <Link to="/about" className="nav-link">About</Link>
+                    </li>
+                    {loggedIn && (
+                        <li className="nav-item">
+                            <Link to="/dashboard" className="nav-link">Dashboard</Link>
+                        </li>
+                    )}
+                    <li className="nav-item">
+                        {loggedIn ? (
+                            <button onClick={handleLogout} className="nav-link btn-link">Logout</button>
+                        ) : (
+                            <button onClick={onShowLogin} className="nav-link btn-link">Login</button>
+                        )}
+                    </li>
+                </ul>
+            </nav>
+
+            {/* Standard Navbar for medium and smaller screens */}
+            <nav className="navbar navbar-expand-lg navbar-sc navbar-dark d-lg-none">
+                <div className="container-fluid">
+                    <Link to="/" className="navbar-brand">DocuDefense</Link>
+                    
+                    {/* Toggler button for dropdown */}
+                    <button
+                        className="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarNav"
+                        aria-controls="navbarNav"
+                        aria-expanded={isOpen ? "true" : "false"}
+                        aria-label="Toggle navigation"
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
+                        <span className="navbar-toggler-icon"></span>
+                    </button>
+
+                    {/* Collapsible navbar content */}
+                    <div className={`collapse navbar-collapse ${isOpen ? "show" : ""}`} id="navbarNav">
+                        <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
+                            {loggedIn && currentUser && (
+                                <li className="nav-item">
+                                    <span className="nav-link">Welcome back!</span>
+                                </li>
+                            )}
+                            <li className="nav-item">
+                                <Link to="/" className="nav-link" onClick={() => setIsOpen(false)}>Home</Link>
+                            </li>
+                            <li className="nav-item">
+                                <Link to="/about" className="nav-link" onClick={() => setIsOpen(false)}>About</Link>
+                            </li>
+                            {loggedIn && (
+                                <li className="nav-item">
+                                    <Link to="/dashboard" className="nav-link" onClick={() => setIsOpen(false)}>Dashboard</Link>
+                                </li>
+                            )}
+                            <li className="nav-item">
+                                {loggedIn ? (
+                                    <button onClick={handleLogout} className="nav-link btn-link">Logout</button>
+                                ) : (
+                                    <button onClick={onShowLogin} className="nav-link btn-link">Login</button>
+                                )}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-                <div className="wave-layer wave1"></div>
-                <div className="wave-layer wave2"></div>
-                <div className="wave-layer wave3"></div>
-            </div>
-        </nav>
+            </nav>
+        </>
     );
 }
 
