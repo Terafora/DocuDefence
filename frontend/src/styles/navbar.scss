@@ -1,0 +1,83 @@
+$navbar-bg-color: #343a40;
+$wave-color: #343a40;
+$wave-opacity: 0.9;
+$sidebar-width: 200px;
+
+// Base styling for the entire navbar
+.navbar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: $sidebar-width;
+  background-color: $navbar-bg-color;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 0;
+  overflow: hidden;
+}
+
+// Styling for the navbar content links
+.navbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-left: 20px;
+}
+
+// Navbar items
+.navbar-item {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 18px;
+
+  &:hover {
+    color: lighten(#ffffff, 20%);
+  }
+}
+
+// Wave layers
+.wave-layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-color: $wave-color;
+  opacity: $wave-opacity;
+  clip-path: polygon(
+    95% 0%, 100% 0%, 100% 20%, 95% 25%, 100% 30%, 95% 35%, 100% 40%, 95% 45%,
+    100% 50%, 95% 55%, 100% 60%, 95% 65%, 100% 70%, 95% 75%, 100% 80%, 95% 85%,
+    100% 90%, 95% 95%, 100% 100%, 95% 100%
+  );
+  animation: waveAnimation 8s ease-in-out infinite;
+}
+
+.wave-layer.wave1 {
+  animation-duration: 8s;
+}
+
+.wave-layer.wave2 {
+  animation-duration: 12s;
+  opacity: $wave-opacity - 0.2;
+}
+
+.wave-layer.wave3 {
+  animation-duration: 16s;
+  opacity: $wave-opacity - 0.4;
+}
+
+// Wave animation keyframes
+@keyframes waveAnimation {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px); // Slightly shifts up
+  }
+  100% {
+    transform: translateY(0);
+  }
+}

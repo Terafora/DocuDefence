@@ -60,3 +60,22 @@ h6 {
 #__next {
   isolation: isolate;
 }
+
+// Sidebar width variable
+$sidebar-width: 200px;
+
+// Base styling for the app container
+.App {
+  display: flex;
+}
+
+// Styling for main content
+.main-content {
+  padding: 20px;
+
+  // For larger screens, offset the main content to account for the sidebar
+  @media (min-width: 992px) {
+    margin-left: $sidebar-width; // Adjust this to match your sidebar width
+    width: calc(100% - #{$sidebar-width}); // Ensures it takes the remaining space
+  }
+}
