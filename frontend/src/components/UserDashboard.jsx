@@ -1,7 +1,7 @@
 // src/components/UserDashboard.js
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { uploadFile, getUserFiles, fetchUserIDByEmail } from '../services/userService';
+import { uploadFile, getUserFiles, fetchUserIDByEmail, downloadFile, deleteFile } from '../services/userService';
 import { getUserEmail } from '../services/authService';
 
 function UserDashboard() {
@@ -77,6 +77,34 @@ function UserDashboard() {
         }
     };
 
+    const handleDownload = async (filename) => {
+        if (!userId) {
+            console.error("User ID is undefined. Unable to download file.");
+            return;
+        }
+        try {
+            console.log("Downloading file:", filename);
+            await downloadFile(userId, filename);
+        } catch (error) {
+            console.error('Error downloading file:', error);
+        }
+    };
+
+    const handleDelete = async (filename) => {
+        if (!userId) {
+            console.error("User ID is undefined. Unable to delete file.");
+            return;
+        }
+        try {
+            console.log("Deleting file:", filename);
+            await deleteFile(userId, filename);
+            alert('File deleted successfully');
+            fetchUserFiles();
+        } catch (error) {
+            console.error('Error deleting file:', error);
+        }
+    };
+
     return (
         <div>
             <h2>User Dashboard</h2>
@@ -91,7 +119,11 @@ function UserDashboard() {
             <ul>
                 {files.length > 0 ? (
                     files.map((filename, index) => (
-                        <li key={index}>{filename}</li>
+                        <li key={index}>
+                            {filename}
+                            <button onClick={() => handleDownload(filename)}>Download</button>
+                            <button onClick={() => handleDelete(filename)}>Delete</button>
+                        </li>
                     ))
                 ) : (
                     <p>No files uploaded.</p>

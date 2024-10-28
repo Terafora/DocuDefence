@@ -57,6 +57,50 @@ export async function getUserFiles(userId) {
     return response.json();
 }
 
+// New function to download a file by filename (with encoding)
+export async function downloadFile(userId, filename) {
+    const token = getToken();
+    const encodedFilename = encodeURIComponent(filename);
+    const response = await fetch(`${BASE_URL}/users/${userId}/files/${encodedFilename}/download`, {
+        method: 'GET',
+        headers: {
+            Authorization: token,
+        },
+    });
+
+    if (!response.ok) {
+        console.error('Download response:', await response.text());
+        throw new Error('Failed to download file');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+// New function to delete a file by filename (with encoding)
+export async function deleteFile(userId, filename) {
+    const token = getToken();
+    const encodedFilename = encodeURIComponent(filename);
+    const response = await fetch(`${BASE_URL}/users/${userId}/files/${encodedFilename}/delete`, {
+        method: 'DELETE',
+        headers: {
+            Authorization: token,
+        },
+    });
+
+    if (!response.ok) {
+        console.error('Delete response:', await response.text());
+        throw new Error('Failed to delete file');
+    }
+    return response.json();
+}
+
 // Existing user service functions for handling users
 export async function getUsers() {
     const token = getToken();
