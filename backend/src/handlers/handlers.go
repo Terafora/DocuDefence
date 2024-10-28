@@ -4,6 +4,7 @@ import (
 	"DocuDefense/backend/src/models"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -328,6 +329,65 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Final failure response if retries are exhausted
 	log.Printf("Failed to update user's file list after retries for user %s", userID)
 	http.Error(w, "Failed to update file list after retries", http.StatusInternalServerError)
+}
+
+// DownloadFile allows a user to download a file by filename
+func DownloadFile(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	fileName := params["filename"]
+	filePath := "./uploads/" + fileName
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("Error opening file for download: %v", err)
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		log.Printf("Error sending file for download: %v", err)
+		http.Error(w, "Error downloading file", http.StatusInternalServerError)
+	}
+}
+
+// DeleteFile allows a user to delete a file by filename
+func DeleteFile(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userID := params["id"]
+	fileName := params["filename"]
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		log.Printf("Invalid user ID format: %v", err)
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
+	filePath := "./uploads/" + fileName
+	if err := os.Remove(filePath); err != nil {
+		log.Printf("Error deleting file from disk: %v", err)
+		http.Error(w, "Error deleting file", http.StatusInternalServerError)
+		return
+	}
+
+	// Remove the file name from the user’s file_names array
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	update := bson.M{"$pull": bson.M{"file_names": fileName}}
+	_, err = usersCollection.UpdateOne(ctx, bson.M{"_id": userIDObj}, update)
+	if err != nil {
+		log.Printf("Error removing file from user's file list: %v", err)
+		http.Error(w, "Error updating user's file list", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "File deleted"})
 }
 
 // Search for users by first name or surname

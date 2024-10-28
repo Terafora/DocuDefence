@@ -67,6 +67,8 @@ func main() {
 	r.Handle("/users/{id}", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DeleteUser))).Methods("DELETE")
 	r.Handle("/users/{id}/upload", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.UploadFile))).Methods("POST")
 	r.Handle("/users/{id}/files", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.GetUserFiles))).Methods("GET")
+	r.Handle("/users/{id}/files/{filename}/download", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DownloadFile))).Methods("GET")
+	r.Handle("/users/{id}/files/{filename}/delete", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DeleteFile))).Methods("DELETE")
 	r.HandleFunc("/search", handlers.SearchUsers).Methods("GET")
 
 	c := cors.New(cors.Options{
