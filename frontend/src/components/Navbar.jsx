@@ -33,6 +33,9 @@ function Navbar({ loggedIn, currentUser, onLogout, onShowLogin }) {
                     <li className="nav-item">
                         <Link to="/about" className="nav-link">About</Link>
                     </li>
+                    <li className="nav-item">
+                        <Link to="/allusers" className="nav-link">All Users</Link>
+                    </li>
                     {loggedIn && (
                         <li className="nav-item">
                             <Link to="/dashboard" className="nav-link">Dashboard</Link>
@@ -86,6 +89,9 @@ function Navbar({ loggedIn, currentUser, onLogout, onShowLogin }) {
                                     <Link to="/dashboard" className="nav-link" onClick={() => setIsOpen(false)}>Dashboard</Link>
                                 </li>
                             )}
+                            <li className="nav-item">
+                                <Link to="/allusers" className="nav-link" onClick={() => setIsOpen(false)}>All Users</Link>
+                            </li>
                             <li className="nav-item">
                                 {loggedIn ? (
                                     <button onClick={handleLogout} className="nav-link btn-link">Logout</button>

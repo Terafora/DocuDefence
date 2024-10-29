@@ -6,13 +6,16 @@ import About from './components/About';
 import Navbar from './components/Navbar';
 import Home from './components/Homepage';
 import Footer from './components/Footer';
+import UserList from './components/UserList';
 import { isLoggedIn, clearToken, getUserEmail } from './services/authService';
+import { getUsers } from './services/userService';
 import './App.scss';
 
 function App() {
     const [loggedIn, setLoggedIn] = useState(isLoggedIn());
     const [currentUser, setCurrentUser] = useState(null);
-    const [showModal, setShowModal] = useState(false); // New state to control modal visibility
+    const [users, setUsers] = useState([]);
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         if (loggedIn) {
@@ -29,6 +32,18 @@ function App() {
         }
     };
 
+    useEffect(() => {
+        async function fetchUsers() {
+            try {
+                const fetchedUsers = await getUsers();
+                setUsers(fetchedUsers);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+        fetchUsers();
+    }, []);
+
     const handleLogout = () => {
         clearToken();
         setLoggedIn(false);
@@ -36,11 +51,11 @@ function App() {
     };
 
     const handleShowLogin = () => {
-        setShowModal(true); // Show the login modal
+        setShowModal(true);
     };
 
     const handleCloseLogin = () => {
-        setShowModal(false); // Close the login modal
+        setShowModal(false);
     };
 
     return (
@@ -52,7 +67,7 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/about" element={<About />} />
                         <Route path="/dashboard" element={loggedIn ? <UserDashboard /> : <Navigate to="/" />} />
-                        {/* Removed the /auth route completely */}
+                        <Route path="/allusers" element={<UserList users={users} userEmail={currentUser?.email} />} />
                         <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 </div>
