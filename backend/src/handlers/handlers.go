@@ -392,6 +392,7 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 
 // Search for users by first name or surname
 func SearchUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json") // Set content type
 	queryParams := r.URL.Query()
 	filter := bson.M{}
 
@@ -409,7 +410,8 @@ func SearchUsers(w http.ResponseWriter, r *http.Request) {
 
 	cursor, err := usersCollection.Find(ctx, filter)
 	if err != nil {
-		http.Error(w, "Error fetching users", http.StatusInternalServerError)
+		log.Printf("Error fetching users: %v", err)
+		http.Error(w, `{"error": "Error fetching users"}`, http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
@@ -417,12 +419,16 @@ func SearchUsers(w http.ResponseWriter, r *http.Request) {
 	// Decode the result into a slice of User objects
 	var users []models.User
 	if err := cursor.All(ctx, &users); err != nil {
-		http.Error(w, "Error decoding users", http.StatusInternalServerError)
+		log.Printf("Error decoding users: %v", err)
+		http.Error(w, `{"error": "Error decoding users"}`, http.StatusInternalServerError)
 		return
 	}
 
 	// Return the matched users as JSON
-	json.NewEncoder(w).Encode(users)
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		log.Printf("Error encoding users to JSON: %v", err)
+		http.Error(w, `{"error": "Error encoding response to JSON"}`, http.StatusInternalServerError)
+	}
 }
 
 // GenerateJWT generates a JWT token for authenticated users
