@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthPanel from './components/AuthPanel';
 import UserDashboard from './components/UserDashboard';
@@ -8,7 +8,6 @@ import Home from './components/Homepage';
 import Footer from './components/Footer';
 import UserList from './components/UserList';
 import { isLoggedIn, clearToken, getUserEmail } from './services/authService';
-import { getUsers } from './services/userService';
 import './App.scss';
 
 function App() {
@@ -16,6 +15,9 @@ function App() {
     const [currentUser, setCurrentUser] = useState(null);
     const [users, setUsers] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [page, setPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState(''); // Track the search term
+    const limit = 10; // Items per page
 
     useEffect(() => {
         if (loggedIn) {
@@ -32,19 +34,49 @@ function App() {
         }
     };
 
-    // Fetch users function for initial load
-    const fetchUsers = async () => {
+    // Fetch users function
+    const fetchUsers = useCallback(async () => {
         try {
-            const fetchedUsers = await getUsers();
-            setUsers(fetchedUsers);
+            const query = new URLSearchParams();
+            query.append("page", page);
+            query.append("limit", limit);
+
+            const response = await fetch(`http://localhost:8000/api/users?${query.toString()}`);
+            if (!response.ok) throw new Error("Error fetching users");
+
+            const data = await response.json();
+            setUsers(data);
         } catch (error) {
             console.error('Error fetching users:', error);
         }
-    };
+    }, [page, limit]);
 
+    // Search users function
+    const searchUsers = useCallback(async (searchCriteria) => {
+        const query = new URLSearchParams();
+        if (searchCriteria.term) query.append("term", searchCriteria.term);
+        query.append("page", page);
+        query.append("limit", limit);
+
+        try {
+            const response = await fetch(`http://localhost:8000/api/users/search?${query.toString()}`);
+            if (!response.ok) throw new Error("Error fetching search results");
+
+            const data = await response.json();
+            setUsers(data);
+        } catch (error) {
+            console.error("Error fetching search results:", error);
+        }
+    }, [page, limit]);
+
+    // Fetch users or search results based on searchTerm and page
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        if (searchTerm) {
+            searchUsers({ term: searchTerm });
+        } else {
+            fetchUsers();
+        }
+    }, [page, searchTerm, fetchUsers, searchUsers]);
 
     const handleLogout = () => {
         clearToken();
@@ -60,25 +92,20 @@ function App() {
         setShowModal(false);
     };
 
-    // Search users function
-    const searchUsers = async (searchCriteria) => {
-        const query = new URLSearchParams();
-        if (searchCriteria.term) query.append("term", searchCriteria.term);
-
-        try {
-            // Adjust the path to the correct endpoint
-            const response = await fetch(`http://localhost:8000/api/users/search?${query.toString()}`);
-            if (!response.ok) throw new Error("Error fetching search results");
-
-            const data = await response.json();
-            setUsers(data); // Set the filtered data to state
-        } catch (error) {
-            console.error("Error fetching search results:", error);
-        }
+    // Pagination controls
+    const handleNextPage = () => {
+        setPage((prevPage) => prevPage + 1);
     };
 
+    const handlePreviousPage = () => {
+        setPage((prevPage) => Math.max(prevPage - 1, 1));
+    };
 
-
+    // Update search term and reset page to 1
+    const handleSearchTermChange = (term) => {
+        setSearchTerm(term);
+        setPage(1); // Reset page when searching
+    };
 
     return (
         <Router>
@@ -89,7 +116,17 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/about" element={<About />} />
                         <Route path="/dashboard" element={loggedIn ? <UserDashboard /> : <Navigate to="/" />} />
-                        <Route path="/allusers" element={<UserList users={users} userEmail={currentUser?.email} searchUsers={searchUsers} fetchUsers={fetchUsers} />}/>
+                        <Route 
+                            path="/allusers" 
+                            element={<UserList 
+                                        users={users} 
+                                        page={page} 
+                                        searchUsers={searchUsers} 
+                                        handleNextPage={handleNextPage} 
+                                        handlePreviousPage={handlePreviousPage} 
+                                        onSearchTermChange={handleSearchTermChange}
+                                    />} 
+                        />
                         <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 </div>

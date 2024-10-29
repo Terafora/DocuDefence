@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -16,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // MongoDB collections
@@ -31,10 +33,26 @@ var jwtKey = []byte("your_secret_key")
 
 // Get all users
 func GetUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10 // Default limit per page
+	}
+
+	// Calculate skip and limit
+	skip := (page - 1) * limit
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := usersCollection.Find(ctx, bson.M{})
+	// Find users with pagination
+	cursor, err := usersCollection.Find(ctx, bson.M{}, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
 		log.Printf("Error retrieving users: %v", err)
 		http.Error(w, "Error retrieving users", http.StatusInternalServerError)
@@ -393,9 +411,22 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 // Search for users by first name or surname
 func SearchUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	skip := (page - 1) * limit
+
+	// Filter setup
 	queryParams := r.URL.Query()
 	filter := bson.M{}
-
 	if term, ok := queryParams["term"]; ok && term[0] != "" {
 		filter["$or"] = []bson.M{
 			{"first_name": bson.M{"$regex": term[0], "$options": "i"}},
@@ -406,12 +437,12 @@ func SearchUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Search with pagination
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := usersCollection.Find(ctx, filter)
+	cursor, err := usersCollection.Find(ctx, filter, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
-		log.Printf("Error fetching users: %v", err)
 		http.Error(w, `{"error": "Error fetching users"}`, http.StatusInternalServerError)
 		return
 	}
@@ -419,16 +450,11 @@ func SearchUsers(w http.ResponseWriter, r *http.Request) {
 
 	users := []models.User{}
 	if err := cursor.All(ctx, &users); err != nil {
-		log.Printf("Error decoding users: %v", err)
 		http.Error(w, `{"error": "Error decoding users"}`, http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Users found: %v", users) // Log the users found before encoding
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		log.Printf("Error encoding users to JSON: %v", err)
-		http.Error(w, `{"error": "Error encoding response to JSON"}`, http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(users)
 }
 
 // GenerateJWT generates a JWT token for authenticated users
