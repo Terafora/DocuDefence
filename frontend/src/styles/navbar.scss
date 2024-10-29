@@ -15,7 +15,9 @@ $navbar-padding: 20px;
   z-index: 1000;
   height: 100vh;
   padding: $navbar-padding;
-  clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+
+  // Updated clip-path for more pronounced lean
+  clip-path: polygon(0 0, 100% 0, 75% 100%, 0 100%);
 }
 
 // Brand styling
@@ -32,14 +34,17 @@ $navbar-padding: 20px;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-
+  gap: 0.8rem;
+  height: 50%;
+  justify-content: center;
+  align-items: flex-start;
+  
   .nav-item {
     .nav-link, .btn-link {
       color: #ffffff;
       font-size: 1.2rem;
       text-decoration: none;
-      padding: 0.5rem 1rem;
+      padding: 0.3rem 0;
       transition: color 0.3s ease;
 
       &:hover {
@@ -49,13 +54,16 @@ $navbar-padding: 20px;
   }
 }
 
+
 // Footer styling for the sidebar
 .navbar-footer {
   color: #ffffff;
   font-weight: bold;
   background-color: $navbar-accent-color;
   padding: 0.5rem 1rem;
-  clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+
+  // Updated clip-path for footer to match navbar skew
+  clip-path: polygon(0 0, 100% 0, 80% 100%, 0 100%);
   margin-top: auto;
 
   // Hide on medium and smaller screens
@@ -67,16 +75,17 @@ $navbar-padding: 20px;
     display: none;
   }
 }
- @media  (max-width: 991px) {
+
+@media (max-width: 991px) {
   .custom-navbar {
     display: none;
   }
-    
-  .navbar-sc{
+
+  .navbar-sc {
     position: absolute;
     top: 0;
-    right:0;
-    left:0;
+    right: 0;
+    left: 0;
     background-color: #662d91;
+  }
 }
- }

@@ -65,13 +65,8 @@ h6 {
   isolation: isolate;
 }
 
-// Sidebar width variable (matching navbar width)
-$sidebar-width: 300px;
 
 // Sidebar width variable
-$sidebar-width: 300px;
-
-// Main app layout adjustments
 // Sidebar width variable
 $sidebar-width: 300px;
 
@@ -85,11 +80,14 @@ $sidebar-width: 300px;
 .main-content {
   padding: 1rem;
   width: 100%;
+  background-color: #e0e1e2; // Background color to match the layout
 
-  // For larger screens, offset the main content to account for the sidebar
+  // Apply skew for leaning effect on larger screens
   @media (min-width: 992px) {
     margin-left: $sidebar-width;
     width: calc(100% - #{$sidebar-width});
+    transform: skewX(-5deg); // Skews the content to the left at the top
+    transform-origin: top left; // Ensures the skew starts from the top left corner for a smoother effect
   }
 
   // Add padding-top on smaller screens to avoid overlap with the navbar
@@ -98,9 +96,10 @@ $sidebar-width: 300px;
   }
 }
 
-@media  (max-width: 991px) {
+// Media query for main content adjustments on smaller screens
+@media (max-width: 991px) {
   .main-content {
-    position:absolute;
+    position: absolute;
     top: 4rem;
     z-index: -1;
   }
