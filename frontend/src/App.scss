@@ -65,10 +65,27 @@ h6 {
   isolation: isolate;
 }
 
-
-// Sidebar width variable
 // Sidebar width variable
 $sidebar-width: 300px;
+
+// Animation for main content to slide in and unblur
+@keyframes easeInFromLeft {
+  0% {
+    transform: translateX(-50px) skewX(-5deg);
+    filter: blur(10px); 
+    opacity: 0; 
+  }
+  100% {
+    transform: translateX(0) skewX(-5deg); 
+    filter: blur(0); 
+    opacity: 1;
+  }
+}
+
+// Apply animation class only on route change
+.main-content.animate {
+  animation: easeInFromLeft 1s ease-out forwards; 
+}
 
 // Main app layout adjustments
 .App {
@@ -80,14 +97,14 @@ $sidebar-width: 300px;
 .main-content {
   padding: 1rem;
   width: 100%;
-  background-color: #e0e1e2; // Background color to match the layout
+  background-color: #e0e1e2;
 
   // Apply skew for leaning effect on larger screens
   @media (min-width: 992px) {
     margin-left: $sidebar-width;
     width: calc(100% - #{$sidebar-width});
-    transform: skewX(-5deg); // Skews the content to the left at the top
-    transform-origin: top left; // Ensures the skew starts from the top left corner for a smoother effect
+    transform: skewX(-5deg); 
+    transform-origin: top left;
   }
 
   // Add padding-top on smaller screens to avoid overlap with the navbar
