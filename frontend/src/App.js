@@ -32,15 +32,17 @@ function App() {
         }
     };
 
-    useEffect(() => {
-        async function fetchUsers() {
-            try {
-                const fetchedUsers = await getUsers();
-                setUsers(fetchedUsers);
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            }
+    // Fetch users function for initial load
+    const fetchUsers = async () => {
+        try {
+            const fetchedUsers = await getUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error('Error fetching users:', error);
         }
+    };
+
+    useEffect(() => {
         fetchUsers();
     }, []);
 
@@ -58,6 +60,26 @@ function App() {
         setShowModal(false);
     };
 
+    // Search users function
+    const searchUsers = async (searchCriteria) => {
+        const query = new URLSearchParams();
+        if (searchCriteria.term) query.append("term", searchCriteria.term);
+
+        try {
+            // Adjust the path to the correct endpoint
+            const response = await fetch(`http://localhost:8000/api/users/search?${query.toString()}`);
+            if (!response.ok) throw new Error("Error fetching search results");
+
+            const data = await response.json();
+            setUsers(data); // Set the filtered data to state
+        } catch (error) {
+            console.error("Error fetching search results:", error);
+        }
+    };
+
+
+
+
     return (
         <Router>
             <div className="App d-lg-flex">
@@ -67,7 +89,7 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/about" element={<About />} />
                         <Route path="/dashboard" element={loggedIn ? <UserDashboard /> : <Navigate to="/" />} />
-                        <Route path="/allusers" element={<UserList users={users} userEmail={currentUser?.email} />} />
+                        <Route path="/allusers" element={<UserList users={users} userEmail={currentUser?.email} searchUsers={searchUsers} fetchUsers={fetchUsers} />}/>
                         <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 </div>

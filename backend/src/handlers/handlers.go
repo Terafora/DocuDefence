@@ -392,19 +392,20 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 
 // Search for users by first name or surname
 func SearchUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json") // Set content type
+	w.Header().Set("Content-Type", "application/json")
 	queryParams := r.URL.Query()
 	filter := bson.M{}
 
-	// Check if there is a first_name or surname in the query parameters
-	if firstName, ok := queryParams["first_name"]; ok {
-		filter["first_name"] = bson.M{"$regex": firstName[0], "$options": "i"}
-	}
-	if surname, ok := queryParams["surname"]; ok {
-		filter["surname"] = bson.M{"$regex": surname[0], "$options": "i"}
+	if term, ok := queryParams["term"]; ok && term[0] != "" {
+		filter["$or"] = []bson.M{
+			{"first_name": bson.M{"$regex": term[0], "$options": "i"}},
+			{"surname": bson.M{"$regex": term[0], "$options": "i"}},
+		}
+	} else {
+		http.Error(w, `{"error": "Search term is required"}`, http.StatusBadRequest)
+		return
 	}
 
-	// Search users in MongoDB with the filter
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -416,15 +417,14 @@ func SearchUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(ctx)
 
-	// Decode the result into a slice of User objects
-	var users []models.User
+	users := []models.User{}
 	if err := cursor.All(ctx, &users); err != nil {
 		log.Printf("Error decoding users: %v", err)
 		http.Error(w, `{"error": "Error decoding users"}`, http.StatusInternalServerError)
 		return
 	}
 
-	// Return the matched users as JSON
+	log.Printf("Users found: %v", users) // Log the users found before encoding
 	if err := json.NewEncoder(w).Encode(users); err != nil {
 		log.Printf("Error encoding users to JSON: %v", err)
 		http.Error(w, `{"error": "Error encoding response to JSON"}`, http.StatusInternalServerError)
