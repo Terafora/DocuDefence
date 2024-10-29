@@ -4,6 +4,12 @@ $footer-text-color: #ffffff;
 $footer-link-color: lighten($footer-text-color, 20%);
 $footer-link-hover-color: lighten($footer-link-color, 40%);
 
+footer {
+  max-height: 15rem;
+  padding-bottom: 1rem;
+  overflow: hidden;
+}
+
 // Footer container styling
 .custom-footer {
   background-color: $footer-bg-color;
@@ -25,9 +31,5 @@ $footer-link-hover-color: lighten($footer-link-color, 40%);
       color: $footer-link-hover-color;
       text-decoration: underline;
     }
-  }
-
-  .text-uppercase {
-    font-weight: bold;
   }
 }

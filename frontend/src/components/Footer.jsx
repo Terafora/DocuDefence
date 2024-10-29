@@ -4,7 +4,7 @@ import '../styles/footer.scss';
 
 function Footer() {
     return (
-        <footer className="custom-footer py-4">
+        <footer className="custom-footer">
             <div className="container text-center text-md-start">
                 <div className="row footer-cust">
                 {/* Copyright and Additional Links */}
