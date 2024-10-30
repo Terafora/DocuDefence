@@ -162,3 +162,24 @@ export async function loginUser(credentials) {
     const data = await response.json();
     return data;
 }
+
+// Fetch PDF blob for previewing
+export async function fetchPdfBlob(userId, filename, version) {
+    const token = getToken();
+    const encodedFilename = encodeURIComponent(filename);
+    
+    const response = await fetch(`${BASE_URL}/users/${userId}/files/${encodedFilename}/${version}/blob`, {
+        method: 'GET',
+        headers: {
+            Authorization: token,
+        },
+    });
+
+    if (!response.ok) {
+        console.error('Fetch PDF blob response:', await response.text());
+        throw new Error('Failed to fetch PDF blob');
+    }
+
+    return await response.blob();
+}
+

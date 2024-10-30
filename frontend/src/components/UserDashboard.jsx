@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { uploadFile, getUserFiles, fetchUserIDByEmail, downloadFile, deleteFile } from '../services/userService';
-import { getUserEmail } from '../services/authService';
+import { uploadFile, getUserFiles, fetchUserIDByEmail, deleteFile } from '../services/userService';
+import { getUserEmail, getToken } from '../services/authService';
+import PDFPreview from './pdfPreview';
 import '../styles/userDashboard.scss';
 
 function UserDashboard() {
@@ -12,6 +13,7 @@ function UserDashboard() {
     const [message, setMessage] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [fileToDelete, setFileToDelete] = useState(null);
+    const [previewFile, setPreviewFile] = useState(null);
 
     const initializeUserID = useCallback(async () => {
         const email = getUserEmail();
@@ -85,22 +87,9 @@ function UserDashboard() {
         }
     };
 
-    const handleDownload = async (filename, version) => {
-        if (!filename) {
-            console.error("Filename is undefined. Cannot download.");
-            return;
-        }
-        try {
-            await downloadFile(userId, filename, version);
-        } catch (error) {
-            console.error('Error downloading file:', error);
-        }
-    };
-
     const handleDeleteConfirmed = async () => {
         if (!fileToDelete) return;
 
-        // Immediately hide the file from the UI
         setFiles(prevFiles => {
             const updatedFiles = { ...prevFiles };
             delete updatedFiles[fileToDelete];
@@ -130,6 +119,29 @@ function UserDashboard() {
         setShowModal(true);
     };
 
+    const handlePreview = async (filename, version) => {
+        try {
+            const token = getToken().replace("Bearer ", ""); // Remove the duplicate "Bearer" part if already present
+            const response = await fetch(`http://localhost:8000/users/${userId}/files/${filename}/download`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/pdf'
+                },
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Failed to fetch PDF file: ${response.statusText}`);
+            }
+    
+            const arrayBuffer = await response.arrayBuffer();
+            setPreviewFile(new Uint8Array(arrayBuffer));
+        } catch (error) {
+            console.error('Error fetching PDF for preview:', error);
+        }
+    };
+    
+
     return (
         <div>
             <h2>User Dashboard</h2>
@@ -151,8 +163,8 @@ function UserDashboard() {
                             <p>Filename: {filename}</p>
                             <p>Version: {files[filename][0].version}</p>
                             <p>Upload Date: {new Date(files[filename][0].upload_date).toLocaleDateString()}</p>
-                            <button onClick={() => handleDownload(filename, files[filename][0].version)}>Download</button>
                             <button onClick={() => confirmDelete(filename)}>Delete</button>
+                            <button onClick={() => handlePreview(filename, files[filename][0].version)}>Preview</button>
                             <button onClick={() => toggleExpand(filename)}>
                                 {expandedFiles[filename] ? 'Hide Previous Versions' : 'Show Previous Versions'}
                             </button>
@@ -163,7 +175,7 @@ function UserDashboard() {
                                         <li key={versionIndex}>
                                             <p>Version: {versionedFile.version}</p>
                                             <p>Upload Date: {new Date(versionedFile.upload_date).toLocaleDateString()}</p>
-                                            <button onClick={() => handleDownload(filename, versionedFile.version)}>Download</button>
+                                            <button onClick={() => handlePreview(filename, versionedFile.version)}>Preview</button>
                                         </li>
                                     ))}
                                 </ul>
@@ -174,6 +186,14 @@ function UserDashboard() {
                     <p>No files uploaded.</p>
                 )}
             </ul>
+
+            {/* PDF Preview */}
+            {previewFile && (
+                <div className="pdf-preview-modal">
+                    <PDFPreview fileBlob={previewFile} />
+                    <button onClick={() => setPreviewFile(null)}>Close Preview</button>
+                </div>
+            )}
 
             {/* Confirmation Modal */}
             {showModal && (

@@ -71,6 +71,10 @@ func main() {
 	r.Handle("/users/{id}/files/{filename}/delete", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DeleteFile))).Methods("DELETE")
 	r.HandleFunc("/api/users/search", handlers.SearchUsers).Methods("GET")
 
+	// Serve static files such as pdf.worker.js from the public directory
+	fs := http.FileServer(http.Dir("./public"))
+	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
