@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { uploadFile, getUserFiles, fetchUserIDByEmail, downloadFile, deleteFile } from '../services/userService';
 import { getUserEmail } from '../services/authService';
+import '../styles/userDashboard.scss';
 
 function UserDashboard() {
     const [selectedFile, setSelectedFile] = useState(null);
-    const [files, setFiles] = useState([]); // Default to an empty array
+    const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [userId, setUserId] = useState(null);
+    const [expandedFiles, setExpandedFiles] = useState({});
+    const [message, setMessage] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [fileToDelete, setFileToDelete] = useState(null);
 
     const initializeUserID = useCallback(async () => {
         const email = getUserEmail();
@@ -31,7 +36,20 @@ function UserDashboard() {
         try {
             setLoading(true);
             const userFiles = await getUserFiles(userId);
-            setFiles(userFiles || []); // Ensure files is an array even if null is returned
+
+            const groupedFiles = {};
+            userFiles.forEach((file) => {
+                if (!groupedFiles[file.filename]) {
+                    groupedFiles[file.filename] = [];
+                }
+                groupedFiles[file.filename].push(file);
+            });
+
+            Object.keys(groupedFiles).forEach(filename => {
+                groupedFiles[filename].sort((a, b) => b.version - a.version);
+            });
+
+            setFiles(groupedFiles);
         } catch (error) {
             console.error('Error fetching user files:', error);
         } finally {
@@ -47,43 +65,69 @@ function UserDashboard() {
 
     const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
 
+    const displayMessage = (msg, isError = false) => {
+        setMessage({ text: msg, isError });
+        setTimeout(() => setMessage(null), 3000);
+    };
+
     const handleUpload = async () => {
         if (!selectedFile || !userId) return;
         try {
             setLoading(true);
             await uploadFile(userId, selectedFile);
             fetchUserFiles();
+            displayMessage('File uploaded successfully!');
         } catch (error) {
             console.error('Error uploading file:', error);
+            displayMessage('Error uploading file. Please try again.', true);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDownload = async (filename) => {
+    const handleDownload = async (filename, version) => {
         if (!filename) {
             console.error("Filename is undefined. Cannot download.");
             return;
         }
         try {
-            await downloadFile(userId, filename);
+            await downloadFile(userId, filename, version);
         } catch (error) {
             console.error('Error downloading file:', error);
         }
     };
 
-    const handleDelete = async (filename) => {
-        if (!filename) {
-            console.error("Filename is undefined. Cannot delete.");
-            return;
-        }
+    const handleDeleteConfirmed = async () => {
+        if (!fileToDelete) return;
+
+        // Immediately hide the file from the UI
+        setFiles(prevFiles => {
+            const updatedFiles = { ...prevFiles };
+            delete updatedFiles[fileToDelete];
+            return updatedFiles;
+        });
+
         try {
-            const encodedFilename = encodeURIComponent(filename);
-            await deleteFile(userId, encodedFilename);
-            fetchUserFiles();
+            await deleteFile(userId, fileToDelete);
+            displayMessage('File deleted successfully!');
         } catch (error) {
-            console.error('Error deleting file:', error);
+            console.warn('Minor error deleting file:', error);
+        } finally {
+            setShowModal(false);
+            setFileToDelete(null);
         }
+    };
+
+    const toggleExpand = (filename) => {
+        setExpandedFiles(prevState => ({
+            ...prevState,
+            [filename]: !prevState[filename]
+        }));
+    };
+
+    const confirmDelete = (filename) => {
+        setFileToDelete(filename);
+        setShowModal(true);
     };
 
     return (
@@ -93,23 +137,54 @@ function UserDashboard() {
             <button onClick={handleUpload} disabled={loading}>Upload PDF</button>
 
             {loading && <p>Loading...</p>}
+            {message && (
+                <p className={`message ${message.isError ? 'error' : 'success'}`}>
+                    {message.text}
+                </p>
+            )}
 
             <h3>My Files</h3>
-            <ul>
-                {files.length > 0 ? (
-                    files.map((file, index) => (
-                        <li key={file.id || index}>
-                            <p>Filename: {file.filename || "N/A"}</p>
-                            <p>Version: {file.version || "N/A"}</p>
-                            <p>Upload Date: {file.upload_date ? new Date(file.upload_date).toLocaleDateString() : "Unknown"}</p>
-                            <button onClick={() => handleDownload(file.filename)}>Download</button>
-                            <button onClick={() => handleDelete(file.filename)}>Delete</button>
+            <ul style={{ listStyleType: 'none' }}>
+                {Object.keys(files).length > 0 ? (
+                    Object.keys(files).map((filename, index) => (
+                        <li key={index} style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+                            <p>Filename: {filename}</p>
+                            <p>Version: {files[filename][0].version}</p>
+                            <p>Upload Date: {new Date(files[filename][0].upload_date).toLocaleDateString()}</p>
+                            <button onClick={() => handleDownload(filename, files[filename][0].version)}>Download</button>
+                            <button onClick={() => confirmDelete(filename)}>Delete</button>
+                            <button onClick={() => toggleExpand(filename)}>
+                                {expandedFiles[filename] ? 'Hide Previous Versions' : 'Show Previous Versions'}
+                            </button>
+
+                            {expandedFiles[filename] && (
+                                <ul style={{ paddingLeft: '20px', marginTop: '10px', listStyleType: 'none' }}>
+                                    {files[filename].slice(1).map((versionedFile, versionIndex) => (
+                                        <li key={versionIndex}>
+                                            <p>Version: {versionedFile.version}</p>
+                                            <p>Upload Date: {new Date(versionedFile.upload_date).toLocaleDateString()}</p>
+                                            <button onClick={() => handleDownload(filename, versionedFile.version)}>Download</button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </li>
                     ))
                 ) : (
-                    <p>No files uploaded.</p> // Fallback message when files array is empty
+                    <p>No files uploaded.</p>
                 )}
             </ul>
+
+            {/* Confirmation Modal */}
+            {showModal && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <p>Are you sure you want to delete this file?</p>
+                        <button onClick={handleDeleteConfirmed}>Yes, Delete</button>
+                        <button onClick={() => setShowModal(false)}>Cancel</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

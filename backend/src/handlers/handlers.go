@@ -394,24 +394,61 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 	encodedFilename := params["filename"]
 	filename, err := url.QueryUnescape(encodedFilename)
 	if err != nil {
+		log.Printf("Error decoding filename: %v", err)
 		http.Error(w, "Invalid filename", http.StatusBadRequest)
 		return
 	}
 
-	filePath := "./uploads/" + filename
-	if err := os.Remove(filePath); err != nil {
-		http.Error(w, "Error deleting file", http.StatusInternalServerError)
-		return
-	}
-
-	// Remove MongoDB document associated with the file
-	_, err = documentsCollection.DeleteOne(context.Background(), bson.M{"filename": filename})
+	userID := params["id"]
+	userIDObj, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		http.Error(w, "Error deleting document record", http.StatusInternalServerError)
+		log.Printf("Invalid user ID format: %v", err)
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "File deleted"})
+	// Retrieve all versions of the file by filename and user ID
+	cursor, err := documentsCollection.Find(context.Background(), bson.M{
+		"user_id":  userIDObj,
+		"filename": filename,
+	})
+	if err != nil {
+		log.Printf("Error retrieving file versions for deletion: %v", err)
+		http.Error(w, "Error retrieving file versions", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	// Track errors if file versions can't be deleted from the file system
+	var deletionErrors []string
+	for cursor.Next(context.Background()) {
+		var doc models.Document
+		if err := cursor.Decode(&doc); err != nil {
+			log.Printf("Error decoding document during deletion: %v", err)
+			continue
+		}
+
+		// Remove the file from disk
+		filePath := "./uploads/" + doc.Filename
+		if err := os.Remove(filePath); err != nil {
+			log.Printf("Error deleting file from disk: %v", err)
+			deletionErrors = append(deletionErrors, fmt.Sprintf("Error deleting version %d", doc.Version))
+		}
+
+		// Remove the document from the database
+		_, err := documentsCollection.DeleteOne(context.Background(), bson.M{"_id": doc.ID})
+		if err != nil {
+			log.Printf("Error deleting file from database: %v", err)
+			deletionErrors = append(deletionErrors, fmt.Sprintf("Error removing version %d from database", doc.Version))
+		}
+	}
+
+	if len(deletionErrors) > 0 {
+		http.Error(w, strings.Join(deletionErrors, "; "), http.StatusInternalServerError)
+	} else {
+		log.Printf("Successfully deleted all versions of file: %s", filename)
+		json.NewEncoder(w).Encode(map[string]string{"message": "File deleted successfully"})
+	}
 }
 
 // Search for users by first name or surname
