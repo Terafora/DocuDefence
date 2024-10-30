@@ -22,6 +22,42 @@ function MainContentWrapper({ children }) {
         return () => clearTimeout(timeout);
     }, [location]);
 
+    // Scroll effect for diagonal movement on larger screens
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.scrollY;
+            const mainContent = document.querySelector('.main-content');
+
+            if (window.innerWidth > 992) {
+                // Only apply the effect on large screens
+                if (mainContent) {
+                    mainContent.style.transform = `translateX(${scrollTop * 0.09}px) skewX(-5deg)`;
+                }
+            } else {
+                // Remove transform effect for smaller screens
+                if (mainContent) {
+                    mainContent.style.transform = 'none';
+                }
+            }
+        };
+
+        const handleResize = () => {
+            // Adjust the transform effect when resizing
+            const mainContent = document.querySelector('.main-content');
+            if (window.innerWidth <= 992 && mainContent) {
+                mainContent.style.transform = 'none';
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
     return (
         <div className={`main-content flex-grow-1 p-4 ${animateContent ? 'animate' : ''}`}>
             {children}

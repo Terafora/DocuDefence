@@ -12,6 +12,7 @@ body {
   -webkit-font-smoothing: antialiased;
   background-color: #e0e1e2;
   color: #333;
+  overflow-x: hidden; // Prevent unwanted horizontal scrolling
 }
 
 // Media elements
@@ -44,7 +45,6 @@ h6 {
   margin: 0;
   color: inherit;
 
-  // Specific typography settings
   p {
     text-wrap: pretty;
   }
@@ -82,9 +82,11 @@ $sidebar-width: 300px;
   }
 }
 
-// Apply animation class only on route change
+// Apply animation class only on route change for larger screens
 .main-content.animate {
-  animation: easeInFromLeft 1s ease-out forwards; 
+  @media (min-width: 992px) {
+    animation: easeInFromLeft 1s ease-out forwards; 
+  }
 }
 
 // Main app layout adjustments
@@ -105,19 +107,41 @@ $sidebar-width: 300px;
     width: calc(100% - #{$sidebar-width});
     transform: skewX(-5deg); 
     transform-origin: top left;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+
+    // Scroll angle effect
+    &::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #888;
+      border-radius: 10px;
+      border: 3px solid #e0e1e2;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
   }
 
-  // Add padding-top on smaller screens to avoid overlap with the navbar
+  // For smaller screens, remove the skew and keep scrolling normal
   @media (max-width: 991px) {
     padding-top: 4rem;
+    transform: none;
+    transform-origin: initial;
+    overflow-y: scroll;
+    scroll-behavior: auto;
   }
 }
 
-// Media query for main content adjustments on smaller screens
 @media (max-width: 991px) {
   .main-content {
-    position: absolute;
-    top: 4rem;
-    z-index: -1;
+    position: relative;
+    top: 0; 
+    z-index: auto; 
+    width: 100%;
+    margin-left: 0;
   }
 }
