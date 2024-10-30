@@ -6,14 +6,13 @@ $navbar-padding: 20px;
 
 // Shadow for Sidebar Navbar (Large Screens)
 .navbar-shadow {
-  background-color: rgba(0, 0, 0, 0.25); // Dark transparent shadow color
+  background-color: rgba(0, 0, 0, 0.25); 
   width: $navbar-width;
   height: 100vh;
   position: fixed;
-  top: 10px; // Slight offset to create the shadow effect
-  left: 10px; // Slight offset to create the shadow effect
-  z-index: 999; // Lower than the main navbar
-  filter: blur(15px); // Apply blur to create a shadow effect
+  left: 10px;
+  z-index: 1;
+  filter: blur(15px); 
   clip-path: polygon(0 0, 100% 0, 75% 100%, 0 100%);
 }
 
