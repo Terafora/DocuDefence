@@ -52,126 +52,19 @@ $navbar-padding: 20px;
   height: 50%;
   justify-content: center;
   align-items: flex-end;
+  z-index: 1030;
 
   // Apply incremental negative margins and padding to align items with the clipping path
-  @for $i from 1 through 10 { 
+  @for $i from 1 through 10 {
     .nav-item:nth-child(#{$i}) {
       transform: skewX(-5deg);
       transform-origin: left;
-      margin-right: -#{$i * 5}px; 
-      padding-right: #{$i * 12}px; 
+      margin-right: -#{$i * 5}px;
+      padding-right: #{$i * 12}px;
 
       .nav-link, .btn-link {
         color: #ffffff;
-        font-size: 1.2rem;// Sidebar navbar for large screens
-        .custom-navbar.d-lg-flex {
-          background-color: $navbar-bg-color;
-          width: $navbar-width;
-          color: #ffffff;
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 1000;
-          height: 100vh;
-          padding: $navbar-padding;
-        
-          // Updated clip-path for more pronounced lean
-          clip-path: polygon(0 0, 100% 0, 75% 100%, 0 100%);
-        }
-        
-        // Brand styling (skewed to match navbar items)
-        .navbar-brand {
-          font-size: 2rem;
-          font-weight: bold;
-          padding-bottom: 1rem;
-          transform: skewX(-5deg);
-          transform-origin: left;
-          align-self: flex-end;
-          margin-right: 20px;
-        }
-        
-        // "Welcome back!" text styling (skewed to match navbar items)
-        .welcome-text {
-          font-size: 1.2rem;
-          transform: skewX(-5deg); // Apply skew to match navbar items
-          transform-origin: left;
-          margin-bottom: 1rem;
-          align-self: flex-end; // Align to the right
-          margin-right: -10px; // Adjust for clipping path alignment
-        }
-        
-        // Navbar menu styles for the sidebar (large screens)
-        .navbar-menu {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 0.8rem;
-          height: 50%;
-          justify-content: center;
-          align-items: flex-end;
-        
-          // Apply incremental negative margins to align items with the clipping path
-          @for $i from 1 through 10 { // Adjust range based on number of items
-            .nav-item:nth-child(#{$i}) {
-              transform: skewX(-5deg); // Matches skew with main content
-              transform-origin: left; // Keeps the skew consistent from the left edge
-              margin-right: -#{$i * 5}px; // Incremental negative margin for alignment
-        
-              .nav-link, .btn-link {
-                color: #ffffff;
-                font-size: 1.2rem;
-                text-decoration: none;
-                padding: 0.3rem 0;
-                transition: color 0.3s ease;
-        
-                &:hover {
-                  color: lighten($navbar-accent-color, 10%);
-                }
-              }
-            }
-          }
-        }
-        
-        // Footer styling for the sidebar
-        .navbar-footer {
-          color: #ffffff;
-          font-weight: bold;
-          background-color: $navbar-accent-color;
-          padding: 0.5rem 1rem;
-          transform: skewX(-5deg);
-          align-self: flex-end;
-          margin-right: -10px;
-        
-          // Updated clip-path for footer to match navbar skew
-          clip-path: polygon(0 0, 100% 0, 80% 100%, 0 100%);
-          margin-top: auto;
-        
-          // Hide on medium and smaller screens
-          .d-lg-flex & {
-            display: block;
-          }
-        
-          .d-lg-none & {
-            display: none;
-          }
-        }
-        
-        @media (max-width: 991px) {
-          .custom-navbar {
-            display: none;
-          }
-        
-          .navbar-sc {
-            position: absolute;
-            top: 0;
-            right: 0;
-            left: 0;
-            background-color: #662d91;
-          }
-        }
-        
+        font-size: 1.2rem;
         text-decoration: none;
         padding: 0.3rem 0;
         transition: color 0.3s ease;
@@ -191,7 +84,7 @@ $navbar-padding: 20px;
   background-color: $navbar-accent-color;
   padding: 0.5rem 1rem;
   transform: skewX(-5deg);
-  align-self: flex-end; 
+  align-self: flex-end;
   margin-right: -10px;
 
   // Updated clip-path for footer to match navbar skew
@@ -199,15 +92,12 @@ $navbar-padding: 20px;
   margin-top: auto;
 
   // Hide on medium and smaller screens
-  .d-lg-flex & {
-    display: block;
-  }
-
-  .d-lg-none & {
+  @media (max-width: 991px) {
     display: none;
   }
 }
 
+// Media queries for medium and smaller screens
 @media (max-width: 991px) {
   .custom-navbar {
     display: none;
@@ -218,6 +108,30 @@ $navbar-padding: 20px;
     top: 0;
     right: 0;
     left: 0;
-    background-color: #662d91;
+    background-color: $navbar-bg-color;
+    z-index: 1000;
+  }
+}
+
+// Standard Navbar styles for medium and smaller screens
+.navbar-sc {
+  .navbar-brand {
+    font-size: 1.8rem;
+    font-weight: bold;
+  }
+
+  .navbar-nav {
+    .nav-item {
+      .nav-link {
+        color: #ffffff;
+        font-size: 1.1rem;
+        padding: 0.5rem;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: lighten($navbar-accent-color, 15%);
+        }
+      }
+    }
   }
 }
