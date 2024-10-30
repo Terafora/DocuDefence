@@ -4,6 +4,19 @@ $navbar-accent-color: #e33561;
 $navbar-width: 300px;
 $navbar-padding: 20px;
 
+// Shadow for Sidebar Navbar (Large Screens)
+.navbar-shadow {
+  background-color: rgba(0, 0, 0, 0.25); // Dark transparent shadow color
+  width: $navbar-width;
+  height: 100vh;
+  position: fixed;
+  top: 10px; // Slight offset to create the shadow effect
+  left: 10px; // Slight offset to create the shadow effect
+  z-index: 999; // Lower than the main navbar
+  filter: blur(15px); // Apply blur to create a shadow effect
+  clip-path: polygon(0 0, 100% 0, 75% 100%, 0 100%);
+}
+
 // Sidebar navbar for large screens
 .custom-navbar.d-lg-flex {
   background-color: $navbar-bg-color;
@@ -92,12 +105,16 @@ $navbar-padding: 20px;
   margin-top: auto;
 
   // Hide on medium and smaller screens
-  @media (max-width: 991px) {
+  .d-lg-flex & {
+    display: block;
+  }
+
+  .d-lg-none & {
     display: none;
   }
 }
 
-// Media queries for medium and smaller screens
+// Medium and smaller screens styling adjustments
 @media (max-width: 991px) {
   .custom-navbar {
     display: none;
@@ -108,30 +125,43 @@ $navbar-padding: 20px;
     top: 0;
     right: 0;
     left: 0;
-    background-color: $navbar-bg-color;
+    background-color: #662d91;
     z-index: 1000;
   }
-}
 
-// Standard Navbar styles for medium and smaller screens
-.navbar-sc {
-  .navbar-brand {
-    font-size: 1.8rem;
-    font-weight: bold;
+  .navbar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: auto;
+    justify-content: start;
+    align-items: start;
   }
 
-  .navbar-nav {
-    .nav-item {
-      .nav-link {
-        color: #ffffff;
-        font-size: 1.1rem;
-        padding: 0.5rem;
-        transition: color 0.3s ease;
+  .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 
-        &:hover {
-          color: lighten($navbar-accent-color, 15%);
-        }
-      }
+  .navbar-toggler-icon {
+    background-color: #ffffff;
+  }
+
+  .navbar-collapse {
+    background-color: $navbar-bg-color;
+    z-index: 1100;
+  }
+
+  .nav-link {
+    color: #ffffff;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: lighten($navbar-accent-color, 10%);
     }
   }
 }

@@ -18,6 +18,9 @@ function Navbar({ loggedIn, currentUser, onLogout, onShowLogin }) {
 
     return (
         <>
+            {/* Shadow for Sidebar version for large screens (lg and up) */}
+            <div className="navbar-shadow d-none d-lg-block"></div>
+
             {/* Sidebar version for large screens (lg and up) */}
             <nav className="custom-navbar d-none d-lg-flex flex-column">
                 <Link to="/" className="navbar-brand text-center mb-3 navbar-money">DocuDefense</Link>
