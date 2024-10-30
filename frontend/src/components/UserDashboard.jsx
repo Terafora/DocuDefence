@@ -1,12 +1,10 @@
-// src/components/UserDashboard.js
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { uploadFile, getUserFiles, fetchUserIDByEmail, downloadFile, deleteFile } from '../services/userService';
 import { getUserEmail } from '../services/authService';
 
 function UserDashboard() {
     const [selectedFile, setSelectedFile] = useState(null);
-    const [files, setFiles] = useState([]);
+    const [files, setFiles] = useState([]); // Default to an empty array
     const [loading, setLoading] = useState(false);
     const [userId, setUserId] = useState(null);
 
@@ -19,7 +17,6 @@ function UserDashboard() {
         try {
             const userData = await fetchUserIDByEmail(email);
             setUserId(userData.id);
-            console.log("Fetched user ID:", userData.id);
         } catch (error) {
             console.error('Error fetching user ID:', error);
         }
@@ -30,15 +27,11 @@ function UserDashboard() {
     }, [initializeUserID]);
 
     const fetchUserFiles = useCallback(async () => {
-        if (!userId) {
-            console.error("User ID is undefined. Unable to fetch files.");
-            return;
-        }
+        if (!userId) return;
         try {
             setLoading(true);
-            const userData = await getUserFiles(userId);
-            setFiles(userData.file_names || []);
-            console.log("Fetched files for user ID:", userId);
+            const userFiles = await getUserFiles(userId);
+            setFiles(userFiles || []); // Ensure files is an array even if null is returned
         } catch (error) {
             console.error('Error fetching user files:', error);
         } finally {
@@ -55,20 +48,10 @@ function UserDashboard() {
     const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
 
     const handleUpload = async () => {
-        if (!selectedFile) {
-            alert('Please select a file first');
-            return;
-        }
-        if (!userId) {
-            console.error("User ID is undefined. Unable to upload file.");
-            return;
-        }
+        if (!selectedFile || !userId) return;
         try {
             setLoading(true);
-            console.log("Uploading file for user ID:", userId);
             await uploadFile(userId, selectedFile);
-            alert('File uploaded successfully');
-            setSelectedFile(null);
             fetchUserFiles();
         } catch (error) {
             console.error('Error uploading file:', error);
@@ -78,12 +61,11 @@ function UserDashboard() {
     };
 
     const handleDownload = async (filename) => {
-        if (!userId) {
-            console.error("User ID is undefined. Unable to download file.");
+        if (!filename) {
+            console.error("Filename is undefined. Cannot download.");
             return;
         }
         try {
-            console.log("Downloading file:", filename);
             await downloadFile(userId, filename);
         } catch (error) {
             console.error('Error downloading file:', error);
@@ -91,14 +73,13 @@ function UserDashboard() {
     };
 
     const handleDelete = async (filename) => {
-        if (!userId) {
-            console.error("User ID is undefined. Unable to delete file.");
+        if (!filename) {
+            console.error("Filename is undefined. Cannot delete.");
             return;
         }
         try {
-            console.log("Deleting file:", filename);
-            await deleteFile(userId, filename);
-            alert('File deleted successfully');
+            const encodedFilename = encodeURIComponent(filename);
+            await deleteFile(userId, encodedFilename);
             fetchUserFiles();
         } catch (error) {
             console.error('Error deleting file:', error);
@@ -108,25 +89,25 @@ function UserDashboard() {
     return (
         <div>
             <h2>User Dashboard</h2>
-            <div>
-                <input type="file" accept="application/pdf" onChange={handleFileChange} />
-                <button onClick={handleUpload} disabled={loading}>Upload PDF</button>
-            </div>
+            <input type="file" accept="application/pdf" onChange={handleFileChange} />
+            <button onClick={handleUpload} disabled={loading}>Upload PDF</button>
 
             {loading && <p>Loading...</p>}
 
             <h3>My Files</h3>
             <ul>
                 {files.length > 0 ? (
-                    files.map((filename, index) => (
-                        <li key={index}>
-                            {filename}
-                            <button onClick={() => handleDownload(filename)}>Download</button>
-                            <button onClick={() => handleDelete(filename)}>Delete</button>
+                    files.map((file, index) => (
+                        <li key={file.id || index}>
+                            <p>Filename: {file.filename || "N/A"}</p>
+                            <p>Version: {file.version || "N/A"}</p>
+                            <p>Upload Date: {file.upload_date ? new Date(file.upload_date).toLocaleDateString() : "Unknown"}</p>
+                            <button onClick={() => handleDownload(file.filename)}>Download</button>
+                            <button onClick={() => handleDelete(file.filename)}>Delete</button>
                         </li>
                     ))
                 ) : (
-                    <p>No files uploaded.</p>
+                    <p>No files uploaded.</p> // Fallback message when files array is empty
                 )}
             </ul>
         </div>

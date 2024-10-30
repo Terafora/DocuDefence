@@ -2,6 +2,7 @@ import { getToken } from './authService';
 
 const BASE_URL = 'http://localhost:8000';
 
+// Fetch user ID by email
 export async function fetchUserIDByEmail(email) {
     const token = getToken();
     if (!token) {
@@ -22,6 +23,7 @@ export async function fetchUserIDByEmail(email) {
     return response.json();
 }
 
+// Upload file and create a new document version
 export async function uploadFile(userId, file) {
     const formData = new FormData();
     formData.append('contract', file);
@@ -42,6 +44,7 @@ export async function uploadFile(userId, file) {
     return response.json();
 }
 
+// Fetch all versions of a user's files
 export async function getUserFiles(userId) {
     const token = getToken();
     const response = await fetch(`${BASE_URL}/users/${userId}/files`, {
@@ -57,7 +60,7 @@ export async function getUserFiles(userId) {
     return response.json();
 }
 
-// New function to download a file by filename (with encoding)
+// Download a specific version of a file by filename
 export async function downloadFile(userId, filename) {
     const token = getToken();
     const encodedFilename = encodeURIComponent(filename);
@@ -73,17 +76,18 @@ export async function downloadFile(userId, filename) {
         throw new Error('Failed to download file');
     }
 
+    // Create a blob URL for the downloaded file
     const blob = await response.blob();
     const downloadUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = filename;
+    a.download = filename;  // Set the filename for download
     document.body.appendChild(a);
     a.click();
     a.remove();
 }
 
-// New function to delete a file by filename (with encoding)
+// Delete a specific version of a file by filename
 export async function deleteFile(userId, filename) {
     const token = getToken();
     const encodedFilename = encodeURIComponent(filename);
@@ -101,7 +105,7 @@ export async function deleteFile(userId, filename) {
     return response.json();
 }
 
-// Existing user service functions for handling users
+// Other user service functions for handling users
 export async function getUsers() {
     const token = getToken();
     const response = await fetch(`${BASE_URL}/users`, {

@@ -8,8 +8,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -22,10 +24,12 @@ import (
 
 // MongoDB collections
 var usersCollection *mongo.Collection
+var documentsCollection *mongo.Collection
 
 // SetMongoClient initializes the MongoDB client and sets the users collection
 func SetMongoClient(client *mongo.Client) {
 	usersCollection = client.Database("docudefense").Collection("users")
+	documentsCollection = client.Database("docudefense").Collection("documents")
 }
 
 // JWT secret key
@@ -81,9 +85,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ensure user has a unique ID and initialize file_names as an empty array
+	// Ensure user has a unique ID
 	user.ID = primitive.NewObjectID()
-	user.FileNames = []string{} // Initialize file_names as an empty array
 
 	if err := user.HashPassword(user.Password); err != nil {
 		log.Printf("Error hashing password for user: %v", err)
@@ -137,15 +140,27 @@ func GetUserFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
-	err = usersCollection.FindOne(context.Background(), bson.M{"_id": userIDObj}).Decode(&user)
+	var documents []models.Document
+	cursor, err := documentsCollection.Find(context.Background(), bson.M{"user_id": userIDObj})
 	if err != nil {
-		log.Printf("User not found for ID %s: %v", userID, err)
-		http.Error(w, "User not found", http.StatusNotFound)
+		log.Printf("Error retrieving documents for user %s: %v", userID, err)
+		http.Error(w, "Error retrieving documents", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	if err = cursor.All(context.Background(), &documents); err != nil {
+		log.Printf("Error decoding documents: %v", err)
+		http.Error(w, "Error decoding documents", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string][]string{"file_names": user.FileNames})
+	// Log each document to confirm structure
+	for _, doc := range documents {
+		log.Printf("Document fetched: Filename: %s, Version: %d, UploadDate: %v", doc.Filename, doc.Version, doc.UploadDate)
+	}
+
+	json.NewEncoder(w).Encode(documents)
 }
 
 // UpdateUser updates the user information if the requester is the account owner
@@ -261,9 +276,9 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// UploadFile allows a user to upload a PDF file
+// UploadFile allows a user to upload a PDF file with version control
 func UploadFile(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(10 << 20) // 10MB size limit
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		log.Printf("Error parsing form: %v", err)
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
@@ -278,18 +293,9 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Check if the file is a PDF
-	if handler.Header.Get("Content-Type") != "application/pdf" {
-		log.Printf("Invalid file type: %v, expected application/pdf", handler.Header.Get("Content-Type"))
-		http.Error(w, "Only PDF files are allowed", http.StatusBadRequest)
-		return
-	}
-
-	// Retrieve user ID from URL
+	// Get user ID from URL parameters
 	params := mux.Vars(r)
 	userID := params["id"]
-	log.Printf("Received upload request for user ID: %s", userID)
-
 	userIDObj, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		log.Printf("Invalid user ID format: %v", err)
@@ -297,15 +303,11 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save file to disk
-	filePath := "./uploads/" + handler.Filename
-	err = os.MkdirAll("./uploads", os.ModePerm)
-	if err != nil {
-		log.Printf("Error creating uploads directory: %v", err)
-		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
-		return
-	}
+	// Standardize filename by replacing spaces with underscores
+	filename := strings.ReplaceAll(handler.Filename, " ", "_")
+	filePath := "./uploads/" + filename
 
+	// Save file to disk
 	dst, err := os.Create(filePath)
 	if err != nil {
 		log.Printf("Error creating file on disk: %v", err)
@@ -321,87 +323,91 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Retry logic for updating the file list in MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Determine the new version number by finding the latest version of this file
+	var lastDoc models.Document
+	cursor, err := documentsCollection.Find(context.Background(), bson.M{
+		"user_id":  userIDObj,
+		"filename": filename,
+	}, options.Find().SetSort(bson.D{{"version", -1}}).SetLimit(1))
+	if err != nil {
+		log.Printf("Error finding latest version for file %s: %v", filename, err)
+		http.Error(w, "Error finding latest file version", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
 
-	update := bson.M{"$push": bson.M{"file_names": handler.Filename}}
-	attempts := 3
-	for attempts > 0 {
-		result, err := usersCollection.UpdateOne(ctx, bson.M{"_id": userIDObj}, update)
-		if err == nil && result.MatchedCount > 0 {
-			// Success
-			log.Printf("Successfully uploaded file for user %s: %s", userID, handler.Filename)
-			json.NewEncoder(w).Encode(map[string]string{"message": "File uploaded"})
-			return
-		} else if err != nil {
-			log.Printf("Error updating user's file list, retrying... Attempts left: %d, Error: %v", attempts-1, err)
-			time.Sleep(500 * time.Millisecond) // Short delay before retrying
-			attempts--
-		} else {
-			http.Error(w, "Error updating file list", http.StatusInternalServerError)
+	newVersion := 1 // Default to version 1 if no previous version is found
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&lastDoc); err != nil {
+			log.Printf("Error decoding document: %v", err)
+			http.Error(w, "Error decoding document", http.StatusInternalServerError)
 			return
 		}
+		newVersion = lastDoc.Version + 1 // Increment version based on the latest document found
 	}
 
-	// Final failure response if retries are exhausted
-	log.Printf("Failed to update user's file list after retries for user %s", userID)
-	http.Error(w, "Failed to update file list after retries", http.StatusInternalServerError)
+	// Store the standardized filename and version in MongoDB
+	newDoc := models.Document{
+		ID:         primitive.NewObjectID(),
+		UserID:     userIDObj,
+		Filename:   filename,
+		Version:    newVersion,
+		UploadDate: time.Now(),
+	}
+	_, err = documentsCollection.InsertOne(context.Background(), newDoc)
+	if err != nil {
+		log.Printf("Error creating document entry: %v", err)
+		http.Error(w, "Error creating document entry", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Successfully uploaded file: %s, version: %d", filename, newVersion)
+	json.NewEncoder(w).Encode(map[string]string{"message": "File uploaded", "filename": filename, "version": fmt.Sprint(newVersion)})
 }
 
 // DownloadFile allows a user to download a file by filename
 func DownloadFile(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	fileName := params["filename"]
-	filePath := "./uploads/" + fileName
+	encodedFilename := params["filename"]
+	filename, err := url.QueryUnescape(encodedFilename)
+	if err != nil {
+		http.Error(w, "Invalid filename", http.StatusBadRequest)
+		return
+	}
 
+	filePath := "./uploads/" + filename
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Printf("Error opening file for download: %v", err)
 		http.Error(w, "File not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	w.Header().Set("Content-Type", "application/octet-stream")
-
-	_, err = io.Copy(w, file)
-	if err != nil {
-		log.Printf("Error sending file for download: %v", err)
-		http.Error(w, "Error downloading file", http.StatusInternalServerError)
-	}
+	io.Copy(w, file)
 }
 
 // DeleteFile allows a user to delete a file by filename
 func DeleteFile(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	userID := params["id"]
-	fileName := params["filename"]
-
-	userIDObj, err := primitive.ObjectIDFromHex(userID)
+	encodedFilename := params["filename"]
+	filename, err := url.QueryUnescape(encodedFilename)
 	if err != nil {
-		log.Printf("Invalid user ID format: %v", err)
-		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		http.Error(w, "Invalid filename", http.StatusBadRequest)
 		return
 	}
 
-	filePath := "./uploads/" + fileName
+	filePath := "./uploads/" + filename
 	if err := os.Remove(filePath); err != nil {
-		log.Printf("Error deleting file from disk: %v", err)
 		http.Error(w, "Error deleting file", http.StatusInternalServerError)
 		return
 	}
 
-	// Remove the file name from the user’s file_names array
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	update := bson.M{"$pull": bson.M{"file_names": fileName}}
-	_, err = usersCollection.UpdateOne(ctx, bson.M{"_id": userIDObj}, update)
+	// Remove MongoDB document associated with the file
+	_, err = documentsCollection.DeleteOne(context.Background(), bson.M{"filename": filename})
 	if err != nil {
-		log.Printf("Error removing file from user's file list: %v", err)
-		http.Error(w, "Error updating user's file list", http.StatusInternalServerError)
+		http.Error(w, "Error deleting document record", http.StatusInternalServerError)
 		return
 	}
 

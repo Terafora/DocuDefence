@@ -12,7 +12,6 @@ type User struct {
 	Email     string             `json:"email" bson:"email"`
 	Birthdate string             `json:"birthdate" bson:"birthdate"`
 	Password  string             `json:"password" bson:"password"`
-	FileNames []string           `json:"file_names" bson:"file_names"`
 }
 
 // HashPassword hashes the user's password using bcrypt
