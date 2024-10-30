@@ -15,9 +15,7 @@ function MainContentWrapper({ children }) {
     const location = useLocation();
 
     useEffect(() => {
-        // Trigger the animation on route change
         setAnimateContent(true);
-        // Reset the animation after it completes
         const timeout = setTimeout(() => setAnimateContent(false), 1000); // Match with animation duration in CSS
         return () => clearTimeout(timeout);
     }, [location]);
