@@ -16,23 +16,20 @@ function MainContentWrapper({ children }) {
 
     useEffect(() => {
         setAnimateContent(true);
-        const timeout = setTimeout(() => setAnimateContent(false), 1000); // Match with animation duration in CSS
+        const timeout = setTimeout(() => setAnimateContent(false), 1000);
         return () => clearTimeout(timeout);
     }, [location]);
 
-    // Scroll effect for diagonal movement on larger screens
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
             const mainContent = document.querySelector('.main-content');
 
             if (window.innerWidth > 992) {
-                // Only apply the effect on large screens
                 if (mainContent) {
                     mainContent.style.transform = `translateX(${scrollTop * 0.09}px) skewX(-5deg)`;
                 }
             } else {
-                // Remove transform effect for smaller screens
                 if (mainContent) {
                     mainContent.style.transform = 'none';
                 }
@@ -40,7 +37,6 @@ function MainContentWrapper({ children }) {
         };
 
         const handleResize = () => {
-            // Adjust the transform effect when resizing
             const mainContent = document.querySelector('.main-content');
             if (window.innerWidth <= 992 && mainContent) {
                 mainContent.style.transform = 'none';
@@ -69,7 +65,6 @@ function App() {
     const [users, setUsers] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [page, setPage] = useState(1);
-    const [searchTerm, setSearchTerm] = useState('');
     const limit = 10;
 
     useEffect(() => {
@@ -92,41 +87,35 @@ function App() {
             const query = new URLSearchParams();
             query.append("page", page);
             query.append("limit", limit);
-
+    
             const response = await fetch(`http://localhost:8000/api/users?${query.toString()}`);
             if (!response.ok) throw new Error("Error fetching users");
-
+    
             const data = await response.json();
             setUsers(data);
         } catch (error) {
             console.error('Error fetching users:', error);
         }
     }, [page, limit]);
-
+    
     const searchUsers = useCallback(async (searchCriteria) => {
-        const query = new URLSearchParams();
-        if (searchCriteria.term) query.append("term", searchCriteria.term);
-        query.append("page", page);
-        query.append("limit", limit);
-
         try {
-            const response = await fetch(`http://localhost:8000/api/users/search?${query.toString()}`);
+            const query = new URLSearchParams();
+            if (searchCriteria.term) query.append("term", searchCriteria.term);
+            query.append("page", page);
+            query.append("limit", limit);
+    
+            const response = await fetch(`http://localhost:8000/api/users?${query.toString()}`);
             if (!response.ok) throw new Error("Error fetching search results");
-
+    
             const data = await response.json();
             setUsers(data);
         } catch (error) {
             console.error("Error fetching search results:", error);
         }
     }, [page, limit]);
-
-    useEffect(() => {
-        if (searchTerm) {
-            searchUsers({ term: searchTerm });
-        } else {
-            fetchUsers();
-        }
-    }, [page, searchTerm, fetchUsers, searchUsers]);
+    
+    
 
     const handleLogout = () => {
         clearToken();
@@ -150,11 +139,6 @@ function App() {
         setPage((prevPage) => Math.max(prevPage - 1, 1));
     };
 
-    const handleSearchTermChange = (term) => {
-        setSearchTerm(term);
-        setPage(1);
-    };
-
     return (
         <Router>
             <div className="App d-lg-flex">
@@ -169,10 +153,10 @@ function App() {
                             element={<UserList 
                                         users={users} 
                                         page={page} 
+                                        fetchUsers={fetchUsers} 
                                         searchUsers={searchUsers} 
                                         handleNextPage={handleNextPage} 
                                         handlePreviousPage={handlePreviousPage} 
-                                        onSearchTermChange={handleSearchTermChange}
                                     />} 
                         />
                         <Route path="*" element={<Navigate to="/" />} />

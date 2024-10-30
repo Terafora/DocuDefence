@@ -69,7 +69,7 @@ func main() {
 	r.Handle("/users/{id}/files", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.GetUserFiles))).Methods("GET")
 	r.Handle("/users/{id}/files/{filename}/download", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DownloadFile))).Methods("GET")
 	r.Handle("/users/{id}/files/{filename}/delete", handlers.JWTAuthMiddleware(http.HandlerFunc(handlers.DeleteFile))).Methods("DELETE")
-	r.HandleFunc("/api/users/search", handlers.SearchUsers).Methods("GET")
+	r.HandleFunc("/api/users", handlers.GetUsersOrSearch).Methods("GET")
 
 	// Serve static files such as pdf.worker.js from the public directory
 	fs := http.FileServer(http.Dir("./public"))

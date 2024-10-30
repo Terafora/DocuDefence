@@ -451,8 +451,7 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Search for users by first name or surname
-func SearchUsers(w http.ResponseWriter, r *http.Request) {
+func GetUsersOrSearch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Pagination parameters
@@ -475,9 +474,6 @@ func SearchUsers(w http.ResponseWriter, r *http.Request) {
 			{"first_name": bson.M{"$regex": term[0], "$options": "i"}},
 			{"surname": bson.M{"$regex": term[0], "$options": "i"}},
 		}
-	} else {
-		http.Error(w, `{"error": "Search term is required"}`, http.StatusBadRequest)
-		return
 	}
 
 	// Search with pagination

@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-function UserList({ users = [], page, searchUsers, fetchUsers, handleNextPage, handlePreviousPage }) {
-    const [searchTerm, setSearchTerm] = useState('');
+function UserList({ users = [], page, searchUsers, fetchUsers, handleNextPage, handlePreviousPage, searchTerm }) {
+    const [localSearchTerm, setLocalSearchTerm] = useState('');
+
+    useEffect(() => {
+        if (localSearchTerm === '') {
+            fetchUsers();
+        }
+    }, [localSearchTerm, fetchUsers]);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        searchUsers({ term: searchTerm });
+        searchUsers({ term: localSearchTerm });
+    };
+
+    const handleClearSearch = () => {
+        setLocalSearchTerm('');
+        fetchUsers();
     };
 
     return (
@@ -17,10 +28,11 @@ function UserList({ users = [], page, searchUsers, fetchUsers, handleNextPage, h
                 <input
                     type="text"
                     placeholder="Search by First Name or Surname"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
                 />
                 <button type="submit">Search</button>
+                {localSearchTerm && <button type="button" onClick={handleClearSearch}>Clear</button>}
             </form>
 
             {/* User List */}
