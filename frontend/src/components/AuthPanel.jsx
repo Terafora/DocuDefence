@@ -38,34 +38,74 @@ function AuthPanel({ onLogin, onClose }) {
     };
 
     return (
-        <div className="modal show d-block" role="dialog" tabIndex="-1">
-            <div className="modal-dialog" role="document">
-                <div className="modal-content">
-                    <div className="modal-header">
-                        <h5 className="modal-title">{isRegistering ? 'Register' : 'Login'}</h5>
-                        <button type="button" className="close" onClick={onClose}>&times;</button>
-                    </div>
-                    <div className="modal-body">
-                        <form onSubmit={handleSubmit}>
-                            {isRegistering && (
-                                <>
-                                    <input type="text" name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleInputChange} className="form-control mb-2" />
-                                    <input type="text" name="surname" placeholder="Surname" value={formData.surname} onChange={handleInputChange} className="form-control mb-2" />
-                                    <input type="date" name="birthdate" value={formData.birthdate} onChange={handleInputChange} className="form-control mb-2" />
-                                </>
-                            )}
-                            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} className="form-control mb-2" />
-                            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleInputChange} className="form-control mb-2" />
-                            <button type="submit" className="btn btn-primary w-100">{isRegistering ? 'Register' : 'Login'}</button>
-                        </form>
-                    </div>
-                    <div className="modal-footer">
-                        <button className="btn btn-secondary" onClick={toggleForm}>{isRegistering ? 'Already have an account? Login' : 'Create an account'}</button>
-                        <button className="btn btn-secondary" onClick={onClose}>Close</button>
-                    </div>
+        <div className="custom-modal show" role="dialog" tabIndex="-1">
+        <div className="custom-modal-dialog" role="document">
+            <div className="custom-modal-content">
+                <div className="custom-modal-header">
+                    <h5 className="modal-title">{isRegistering ? 'Register' : 'Login'}</h5>
+                    <button type="button" className="close-btn" onClick={onClose}>&times;</button>
+                </div>
+                <div className="custom-modal-body">
+                    <form className="custom-modal-form" onSubmit={handleSubmit}>
+                        {isRegistering && (
+                            <>
+                                <input 
+                                    type="text" 
+                                    name="first_name" 
+                                    placeholder="First Name" 
+                                    value={formData.first_name} 
+                                    onChange={handleInputChange} 
+                                    className="custom-input mb-2"
+                                />
+                                <input 
+                                    type="text" 
+                                    name="surname" 
+                                    placeholder="Surname" 
+                                    value={formData.surname} 
+                                    onChange={handleInputChange} 
+                                    className="custom-input mb-2"
+                                />
+                                <input 
+                                    type="date" 
+                                    name="birthdate" 
+                                    value={formData.birthdate} 
+                                    onChange={handleInputChange} 
+                                    className="custom-input mb-2"
+                                />
+                            </>
+                        )}
+                        <input 
+                            type="email" 
+                            name="email" 
+                            placeholder="Email" 
+                            value={formData.email} 
+                            onChange={handleInputChange} 
+                            className="custom-input mb-2"
+                        />
+                        <input 
+                            type="password" 
+                            name="password" 
+                            placeholder="Password" 
+                            value={formData.password} 
+                            onChange={handleInputChange} 
+                            className="custom-input mb-2"
+                        />
+                        <button type="submit" className="custom-btn primary-btn w-100">
+                            {isRegistering ? 'Register' : 'Login'}
+                        </button>
+                    </form>
+                </div>
+                <div className="custom-modal-footer">
+                    <button className="custom-btn secondary-btn" onClick={toggleForm}>
+                        {isRegistering ? 'Already have an account? Login' : 'Create an account'}
+                    </button>
+                    <button className="custom-btn secondary-btn" onClick={onClose}>Close</button>
                 </div>
             </div>
         </div>
+    </div>
+    
+
     );
 }
 

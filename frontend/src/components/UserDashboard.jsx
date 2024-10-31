@@ -143,69 +143,103 @@ function UserDashboard() {
     
 
     return (
-        <div>
-            <h2>User Dashboard</h2>
-            <input type="file" accept="application/pdf" onChange={handleFileChange} />
-            <button onClick={handleUpload} disabled={loading}>Upload PDF</button>
+        <div className="user-dashboard">
+  <h2 className="dashboard-title">User Dashboard</h2>
 
-            {loading && <p>Loading...</p>}
-            {message && (
-                <p className={`message ${message.isError ? 'error' : 'success'}`}>
-                    {message.text}
-                </p>
-            )}
+  {/* File Upload Section */}
+  <div className="file-upload-section">
+    <input
+      type="file"
+      className="custom-input file-input"
+      accept="application/pdf"
+      onChange={handleFileChange}
+      style={{ maxWidth: "400px", margin: "0 auto" }}
+    />
+    <button className="custom-btn primary-btn mt-3" onClick={handleUpload} disabled={loading}>
+      Upload PDF
+    </button>
+  </div>
 
-            <h3>My Files</h3>
-            <ul style={{ listStyleType: 'none' }}>
-                {Object.keys(files).length > 0 ? (
-                    Object.keys(files).map((filename, index) => (
-                        <li key={index} style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
-                            <p>Filename: {filename}</p>
-                            <p>Version: {files[filename][0].version}</p>
-                            <p>Upload Date: {new Date(files[filename][0].upload_date).toLocaleDateString()}</p>
-                            <button onClick={() => confirmDelete(filename)}>Delete</button>
-                            <button onClick={() => handlePreview(filename, files[filename][0].version)}>Preview</button>
-                            <button onClick={() => toggleExpand(filename)}>
-                                {expandedFiles[filename] ? 'Hide Previous Versions' : 'Show Previous Versions'}
-                            </button>
+  {/* Loading and Message Display */}
+  {loading && <p className="loading-text">Loading...</p>}
+  {message && (
+    <p className={`message ${message.isError ? 'error-message' : 'success-message'}`}>
+      {message.text}
+    </p>
+  )}
 
-                            {expandedFiles[filename] && (
-                                <ul style={{ paddingLeft: '20px', marginTop: '10px', listStyleType: 'none' }}>
-                                    {files[filename].slice(1).map((versionedFile, versionIndex) => (
-                                        <li key={versionIndex}>
-                                            <p>Version: {versionedFile.version}</p>
-                                            <p>Upload Date: {new Date(versionedFile.upload_date).toLocaleDateString()}</p>
-                                            <button onClick={() => handlePreview(filename, versionedFile.version)}>Preview</button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </li>
-                    ))
-                ) : (
-                    <p>No files uploaded.</p>
-                )}
+  {/* Files Section */}
+  <h3 className="my-files-title">My Files</h3>
+  <ul className="file-list mt-4">
+    {Object.keys(files).length > 0 ? (
+      Object.keys(files).map((filename, index) => (
+        <li key={index} className="file-item">
+          <p><strong>Filename:</strong> {filename}</p>
+          <p><strong>Version:</strong> {files[filename][0].version}</p>
+          <p><strong>Upload Date:</strong> {new Date(files[filename][0].upload_date).toLocaleDateString()}</p>
+          <div className="file-actions">
+            <button className="custom-btn danger-btn" onClick={() => confirmDelete(filename)}>Delete</button>
+            <button className="custom-btn secondary-btn" onClick={() => handlePreview(filename, files[filename][0].version)}>Preview</button>
+            <button className="custom-btn info-btn" onClick={() => toggleExpand(filename)}>
+              {expandedFiles[filename] ? 'Hide Previous Versions' : 'Show Previous Versions'}
+            </button>
+          </div>
+
+          {/* Show Previous Versions (Expanded) */}
+          {expandedFiles[filename] && (
+            <ul className="version-list">
+              {files[filename].slice(1).map((versionedFile, versionIndex) => (
+                <li key={versionIndex} className="version-item">
+                  <p><strong>Version:</strong> {versionedFile.version}</p>
+                  <p><strong>Upload Date:</strong> {new Date(versionedFile.upload_date).toLocaleDateString()}</p>
+                  <button className="custom-btn secondary-btn small-btn" onClick={() => handlePreview(filename, versionedFile.version)}>Preview</button>
+                </li>
+              ))}
             </ul>
+          )}
+        </li>
+      ))
+    ) : (
+      <p className="no-files-message">No files uploaded.</p>
+    )}
+  </ul>
 
-            {/* PDF Preview */}
-            {previewFile && (
-                <div className="pdf-preview-modal">
-                    <PDFPreview fileBlob={previewFile} />
-                    <button onClick={() => setPreviewFile(null)}>Close Preview</button>
-                </div>
-            )}
-
-            {/* Confirmation Modal */}
-            {showModal && (
-                <div className="modal">
-                    <div className="modal-content">
-                        <p>Are you sure you want to delete this file?</p>
-                        <button onClick={handleDeleteConfirmed}>Yes, Delete</button>
-                        <button onClick={() => setShowModal(false)}>Cancel</button>
-                    </div>
-                </div>
-            )}
+  {/* Modal for PDF Preview */}
+  {previewFile && (
+    <div className="custom-modal show" tabIndex="-1">
+      <div className="custom-modal-dialog">
+        <div className="custom-modal-content">
+          <div className="custom-modal-header">
+            <h5 className="modal-title">PDF Preview</h5>
+            <button type="button" className="close-btn" onClick={() => setPreviewFile(null)}>&times;</button>
+          </div>
+          <div className="modal-body">
+            <PDFPreview fileBlob={previewFile} />
+          </div>
+          <div className="modal-footer custom-modal-footer">
+            <button className="custom-btn secondary-btn" onClick={() => setPreviewFile(null)}>Close Preview</button>
+          </div>
         </div>
+      </div>
+    </div>
+  )}
+
+  {/* Confirmation Modal */}
+  {showModal && (
+    <div className="custom-modal show" tabIndex="-1">
+      <div className="custom-modal-dialog">
+        <div className="custom-modal-content">
+          <div className="modal-body custom-modal-body">
+            <p>Are you sure you want to delete this file?</p>
+            <button className="custom-btn danger-btn" onClick={handleDeleteConfirmed}>Yes, Delete</button>
+            <button className="custom-btn secondary-btn ms-2" onClick={() => setShowModal(false)}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
     );
 }
 
