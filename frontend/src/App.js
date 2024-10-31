@@ -171,7 +171,7 @@ function App() {
                     <AuthPanel 
                         onLogin={() => setLoggedIn(true)} 
                         onClose={handleCloseLogin} 
-                        isRegistering={isRegistering} // Pass registration state
+                        isRegistering={isRegistering}
                     />
                 )}
                 <Footer />
