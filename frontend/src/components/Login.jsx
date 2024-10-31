@@ -19,23 +19,22 @@ function Login({ onLogin }) {
 
   return (
     <form className="custom-modal-form" onSubmit={handleSubmit}>
-    <input 
+      <input 
         type="email" 
         placeholder="Email" 
         value={email} 
         onChange={(e) => setEmail(e.target.value)} 
         className="custom-input"
-    />
-    <input 
+      />
+      <input 
         type="password" 
         placeholder="Password" 
         value={password} 
         onChange={(e) => setPassword(e.target.value)} 
         className="custom-input"
-    />
-    <button type="submit" className="custom-btn primary-btn">Login</button>
-</form>
-
+      />
+      <button type="submit" className="custom-btn primary-btn">Login</button>
+    </form>
   );
 }
 

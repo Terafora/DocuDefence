@@ -13,7 +13,7 @@ const UserProfileForm = ({ user, onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await onUpdate(user.id, updatedData); // Use the onUpdate prop function
+      await onUpdate(user.id, updatedData); 
       alert('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);

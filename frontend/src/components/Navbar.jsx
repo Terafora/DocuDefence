@@ -44,11 +44,16 @@ function Navbar({ loggedIn, currentUser, onLogout, onShowLogin }) {
                             <Link to="/dashboard" className="nav-link">Dashboard</Link>
                         </li>
                     )}
+                    {!loggedIn && (
+                        <li className="nav-item">
+                            <button onClick={() => onShowLogin(true)} className="nav-link btn-link">New User?</button>
+                        </li>
+                    )}
                     <li className="nav-item">
                         {loggedIn ? (
                             <button onClick={handleLogout} className="nav-link btn-link">Logout</button>
                         ) : (
-                            <button onClick={onShowLogin} className="nav-link btn-link">Login</button>
+                            <button onClick={() => onShowLogin(false)} className="nav-link btn-link">Login</button>
                         )}
                     </li>
                 </ul>
@@ -95,11 +100,17 @@ function Navbar({ loggedIn, currentUser, onLogout, onShowLogin }) {
                             <li className="nav-item">
                                 <Link to="/allusers" className="nav-link" onClick={() => setIsOpen(false)}>All Users</Link>
                             </li>
+                            {!loggedIn && (
+                                <li className="nav-item">
+                                    <button onClick={() => onShowLogin(true)} className="nav-link btn-link">New User?</button>
+
+                                </li>
+                            )}
                             <li className="nav-item">
                                 {loggedIn ? (
                                     <button onClick={handleLogout} className="nav-link btn-link">Logout</button>
                                 ) : (
-                                    <button onClick={onShowLogin} className="nav-link btn-link">Login</button>
+                                    <button onClick={() => onShowLogin(false)} className="nav-link btn-link">Login</button>
                                 )}
                             </li>
                         </ul>

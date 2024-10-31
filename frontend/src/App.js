@@ -64,6 +64,7 @@ function App() {
     const [currentUser, setCurrentUser] = useState(null);
     const [users, setUsers] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
     const [page, setPage] = useState(1);
     const limit = 10;
 
@@ -115,17 +116,16 @@ function App() {
         }
     }, [page, limit]);
     
-    
-
     const handleLogout = () => {
         clearToken();
         setLoggedIn(false);
         setCurrentUser(null);
     };
 
-    const handleShowLogin = () => {
+    const handleShowLogin = (registerMode = false) => {
+        setIsRegistering(registerMode);
         setShowModal(true);
-    };
+    };    
 
     const handleCloseLogin = () => {
         setShowModal(false);
@@ -142,7 +142,12 @@ function App() {
     return (
         <Router>
             <div className="App d-lg-flex">
-                <Navbar loggedIn={loggedIn} currentUser={currentUser} onLogout={handleLogout} onShowLogin={handleShowLogin} />
+                <Navbar 
+                    loggedIn={loggedIn} 
+                    currentUser={currentUser} 
+                    onLogout={handleLogout} 
+                    onShowLogin={handleShowLogin} 
+                />
                 <MainContentWrapper>
                     <Routes>
                         <Route path="/" element={<Home />} />
@@ -162,7 +167,13 @@ function App() {
                         <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 </MainContentWrapper>
-                {showModal && <AuthPanel onLogin={() => setLoggedIn(true)} onClose={handleCloseLogin} />}
+                {showModal && (
+                    <AuthPanel 
+                        onLogin={() => setLoggedIn(true)} 
+                        onClose={handleCloseLogin} 
+                        isRegistering={isRegistering} // Pass registration state
+                    />
+                )}
                 <Footer />
             </div>
         </Router>
