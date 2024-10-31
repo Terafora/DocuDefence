@@ -128,7 +128,7 @@ function UserDashboard() {
 
     const handlePreview = async (filename, version) => {
         try {
-            const token = getToken().replace("Bearer ", ""); // Remove the duplicate "Bearer" part if already present
+            const token = getToken().replace("Bearer ", "");
             const response = await fetch(`http://localhost:8000/users/${userId}/files/${filename}/download`, {
                 method: 'GET',
                 headers: {
@@ -145,6 +145,34 @@ function UserDashboard() {
             setPreviewFile(new Uint8Array(arrayBuffer));
         } catch (error) {
             console.error('Error fetching PDF for preview:', error);
+        }
+    };
+
+    const handleDownload = async (filename, version) => {
+        try {
+            const token = getToken().replace("Bearer ", "");
+            const response = await fetch(`http://localhost:8000/users/${userId}/files/${filename}/download`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/pdf'
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to download file: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `${filename}_v${version}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error downloading file:', error);
         }
     };
 
@@ -175,7 +203,6 @@ function UserDashboard() {
         <div className="user-dashboard">
             <h2 className="dashboard-title">User Dashboard</h2>
 
-            {/* File Upload Section */}
             <div className="file-upload-section">
                 <input
                     type="file"
@@ -189,7 +216,6 @@ function UserDashboard() {
                 </button>
             </div>
 
-            {/* Loading and Message Display */}
             {loading && <p className="loading-text">Loading...</p>}
             {message && (
                 <p className={`message ${message.isError ? 'error-message' : 'success-message'}`}>
@@ -197,7 +223,6 @@ function UserDashboard() {
                 </p>
             )}
 
-            {/* Files Section */}
             <h3 className="my-files-title">My Files</h3>
             <ul className="file-list mt-4">
                 {Object.keys(files).length > 0 ? (
@@ -209,12 +234,12 @@ function UserDashboard() {
                             <div className="file-actions">
                                 <button className="custom-btn danger-btn" onClick={() => confirmDelete(filename)}>Delete</button>
                                 <button className="custom-btn secondary-btn" onClick={() => handlePreview(filename, files[filename][0].version)}>Preview</button>
+                                <button className="custom-btn info-btn" onClick={() => handleDownload(filename, files[filename][0].version)}>Download</button>
                                 <button className="custom-btn info-btn" onClick={() => toggleExpand(filename)}>
                                     {expandedFiles[filename] ? 'Hide Previous Versions' : 'Show Previous Versions'}
                                 </button>
                             </div>
 
-                            {/* Show Previous Versions (Expanded) */}
                             {expandedFiles[filename] && (
                                 <ul className="version-list">
                                     {files[filename].slice(1).map((versionedFile, versionIndex) => (
@@ -222,6 +247,7 @@ function UserDashboard() {
                                             <p><strong>Version:</strong> {versionedFile.version}</p>
                                             <p><strong>Upload Date:</strong> {new Date(versionedFile.upload_date).toLocaleDateString()}</p>
                                             <button className="custom-btn secondary-btn small-btn" onClick={() => handlePreview(filename, versionedFile.version)}>Preview</button>
+                                            <button className="custom-btn info-btn small-btn" onClick={() => handleDownload(filename, versionedFile.version)}>Download</button>
                                         </li>
                                     ))}
                                 </ul>
@@ -233,7 +259,6 @@ function UserDashboard() {
                 )}
             </ul>
 
-            {/* Modal for PDF Preview */}
             {previewFile && (
                 <div className="custom-modal show" tabIndex="-1">
                     <div className="custom-modal-dialog">
@@ -253,14 +278,12 @@ function UserDashboard() {
                 </div>
             )}
 
-            {/* Profile Modals */}
             <div className="user-profile-section mt-5">
                 <h3 className="profile-section-title">User Profile</h3>
                 <button className="custom-btn info-btn" onClick={() => setShowProfileModal(true)}>Edit Profile</button>
                 <button className="custom-btn danger-btn ms-2" onClick={() => setShowDeleteModal(true)}>Delete Account</button>
             </div>
 
-            {/* Profile Update Modal */}
             {showProfileModal && (
                 <div className="custom-modal show" tabIndex="-1">
                     <div className="custom-modal-dialog">
@@ -277,7 +300,6 @@ function UserDashboard() {
                 </div>
             )}
 
-            {/* Profile Delete Modal */}
             {showDeleteModal && (
                 <div className="custom-modal show" tabIndex="-1">
                     <div className="custom-modal-dialog">
@@ -297,7 +319,6 @@ function UserDashboard() {
                 </div>
             )}
 
-            {/* Confirmation Modal */}
             {showModal && (
                 <div className="custom-modal show" tabIndex="-1">
                     <div className="custom-modal-dialog">
