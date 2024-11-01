@@ -22,14 +22,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MongoDB collections
-var usersCollection *mongo.Collection
-var documentsCollection *mongo.Collection
+// DatabaseCollection defines an interface for MongoDB collection actions
+type DatabaseCollection interface {
+	Find(ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
+	InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error)
+	FindOne(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
+	UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error)
+	DeleteOne(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
+}
 
-// SetMongoClient initializes the MongoDB client and sets the users collection
-func SetMongoClient(client *mongo.Client) {
-	usersCollection = client.Database("docudefense").Collection("users")
-	documentsCollection = client.Database("docudefense").Collection("documents")
+// DatabaseClient defines an interface for MongoDB client actions
+type DatabaseClient interface {
+	Database(name string, opts ...*options.DatabaseOptions) *mongo.Database
+}
+
+// MongoDB collections as interfaces for dependency injection
+var usersCollection DatabaseCollection
+var documentsCollection DatabaseCollection
+
+// SetMongoClient initializes the MongoDB client and sets the collections
+func SetMongoClient(client DatabaseClient) {
+	db := client.Database("docudefense")
+	usersCollection = db.Collection("users")
+	documentsCollection = db.Collection("documents")
 }
 
 // JWT secret key
@@ -74,7 +89,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userList)
 }
 
-// Updated CreateUser function
+// CreateUser adds a new user to the database
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 
@@ -155,15 +170,10 @@ func GetUserFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log each document to confirm structure
-	for _, doc := range documents {
-		log.Printf("Document fetched: Filename: %s, Version: %d, UploadDate: %v", doc.Filename, doc.Version, doc.UploadDate)
-	}
-
 	json.NewEncoder(w).Encode(documents)
 }
 
-// UpdateUser updates the user information if the requester is the account owner
+// UpdateUser updates user information if requester is the account owner
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID := params["id"]
@@ -230,7 +240,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("User updated: %v", updatedUser)
 	json.NewEncoder(w).Encode(updatedUser)
 }
 
@@ -270,10 +279,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("User deleted with ID: %s", userID)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "User deleted",
-	})
+	json.NewEncoder(w).Encode(map[string]string{"message": "User deleted"})
 }
 
 // UploadFile allows a user to upload a PDF file with version control
@@ -293,7 +299,6 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Get user ID from URL parameters
 	params := mux.Vars(r)
 	userID := params["id"]
 	userIDObj, err := primitive.ObjectIDFromHex(userID)
@@ -303,11 +308,9 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Standardize filename by replacing spaces with underscores
 	filename := strings.ReplaceAll(handler.Filename, " ", "_")
 	filePath := "./uploads/" + filename
 
-	// Save file to disk
 	dst, err := os.Create(filePath)
 	if err != nil {
 		log.Printf("Error creating file on disk: %v", err)
@@ -323,7 +326,6 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Determine the new version number by finding the latest version of this file
 	var lastDoc models.Document
 	cursor, err := documentsCollection.Find(context.Background(), bson.M{
 		"user_id":  userIDObj,
@@ -336,17 +338,16 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.Background())
 
-	newVersion := 1 // Default to version 1 if no previous version is found
+	newVersion := 1
 	if cursor.Next(context.Background()) {
 		if err := cursor.Decode(&lastDoc); err != nil {
 			log.Printf("Error decoding document: %v", err)
 			http.Error(w, "Error decoding document", http.StatusInternalServerError)
 			return
 		}
-		newVersion = lastDoc.Version + 1 // Increment version based on the latest document found
+		newVersion = lastDoc.Version + 1
 	}
 
-	// Store the standardized filename and version in MongoDB
 	newDoc := models.Document{
 		ID:         primitive.NewObjectID(),
 		UserID:     userIDObj,
@@ -361,7 +362,6 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Successfully uploaded file: %s, version: %d", filename, newVersion)
 	json.NewEncoder(w).Encode(map[string]string{"message": "File uploaded", "filename": filename, "version": fmt.Sprint(newVersion)})
 }
 
@@ -407,7 +407,6 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Retrieve all versions of the file by filename and user ID
 	cursor, err := documentsCollection.Find(context.Background(), bson.M{
 		"user_id":  userIDObj,
 		"filename": filename,
@@ -419,7 +418,6 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.Background())
 
-	// Track errors if file versions can't be deleted from the file system
 	var deletionErrors []string
 	for cursor.Next(context.Background()) {
 		var doc models.Document
@@ -428,14 +426,12 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Remove the file from disk
 		filePath := "./uploads/" + doc.Filename
 		if err := os.Remove(filePath); err != nil {
 			log.Printf("Error deleting file from disk: %v", err)
 			deletionErrors = append(deletionErrors, fmt.Sprintf("Error deleting version %d", doc.Version))
 		}
 
-		// Remove the document from the database
 		_, err := documentsCollection.DeleteOne(context.Background(), bson.M{"_id": doc.ID})
 		if err != nil {
 			log.Printf("Error deleting file from database: %v", err)
@@ -446,15 +442,14 @@ func DeleteFile(w http.ResponseWriter, r *http.Request) {
 	if len(deletionErrors) > 0 {
 		http.Error(w, strings.Join(deletionErrors, "; "), http.StatusInternalServerError)
 	} else {
-		log.Printf("Successfully deleted all versions of file: %s", filename)
 		json.NewEncoder(w).Encode(map[string]string{"message": "File deleted successfully"})
 	}
 }
 
+// GetUsersOrSearch fetches and searches users with pagination
 func GetUsersOrSearch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// Pagination parameters
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if page < 1 {
@@ -465,8 +460,6 @@ func GetUsersOrSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	skip := (page - 1) * limit
-
-	// Filter setup
 	queryParams := r.URL.Query()
 	filter := bson.M{}
 	if term, ok := queryParams["term"]; ok && term[0] != "" {
@@ -476,7 +469,6 @@ func GetUsersOrSearch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Search with pagination
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -548,8 +540,6 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Generated token for user %s: %s", foundUser.Email, token)
-	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Login successful",
 		"token":   token,
