@@ -203,7 +203,7 @@ function UserDashboard() {
         <div className="user-dashboard">
             <h2 className="dashboard-title">User Dashboard</h2>
 
-            <div className="file-upload-section">
+            <div className="file-upload-section custom-card">
                 <input
                     type="file"
                     className="custom-input file-input"
@@ -224,10 +224,10 @@ function UserDashboard() {
             )}
 
             <h3 className="my-files-title">My Files</h3>
-            <ul className="file-list mt-4">
+            <ul className="file-list list-unstyled mt-4">
                 {Object.keys(files).length > 0 ? (
                     Object.keys(files).map((filename, index) => (
-                        <li key={index} className="file-item">
+                        <li key={index} className="file-item custom-card">
                             <p><strong>Filename:</strong> {filename}</p>
                             <p><strong>Version:</strong> {files[filename][0].version}</p>
                             <p><strong>Upload Date:</strong> {new Date(files[filename][0].upload_date).toLocaleDateString()}</p>

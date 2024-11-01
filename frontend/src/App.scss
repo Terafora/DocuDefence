@@ -79,7 +79,7 @@ h6 {
   isolation: isolate;
 }
 
-// Sidebar width variable
+$main-bg-color: #ae8efd;
 $sidebar-width: 300px;
 
 // Animation for main content to slide in and unblur
@@ -100,8 +100,8 @@ $sidebar-width: 300px;
 .App {
   display: flex;
   flex-direction: row;
-  height: 100%; // Ensure App stretches full height
-  position: relative; // Set relative positioning for modal to overlay correctly
+  height: 100%; 
+  position: relative;
 }
 
 // Styling for main content
@@ -145,6 +145,35 @@ $sidebar-width: 300px;
   }
 }
 
+.custom-title{
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+    font-family: 'Roboto', sans-serif;
+    font-size: 40rem;
+    padding: 0.5rem;
+  }
+}
+
+.custom-card{
+  border-top:#000 solid 8px;
+  border-right: #000 solid 8px;
+  border-bottom: #000 solid 20px;
+  border-left: #000 solid 20px;
+  background-color: $main-bg-color;
+  color: #fff;
+}
+
+.custom-title h1,
+.custom-title h2,
+.custom-title h3,
+.custom-title h4,
+.custom-title h5,
+.custom-title h6 {
+  font-weight: bold !important;
+  font-family: 'Roboto', sans-serif;
+  padding: 0.5rem;
+}
+
 // Modal styles for all custom modals (overriding Bootstrap defaults)
 .custom-modal {
   position: fixed;
@@ -154,9 +183,9 @@ $sidebar-width: 300px;
   height: 100%;
   display: flex;
   justify-content: center;
-  align-items: center; // Centered vertically and horizontally
-  background: rgba(255, 255, 255, 0); // Transparent background
-  backdrop-filter: blur(25px); // Strong blur effect to obfuscate background
+  align-items: center;
+  background: rgba(255, 255, 255, 0);
+  backdrop-filter: blur(25px);
   z-index: 1050;
   overflow: hidden;
 
@@ -170,7 +199,12 @@ $sidebar-width: 300px;
     max-width: 500px;
     width: calc(100% - 40px); // Adds responsiveness
     padding: 20px;
-    background: #fff;
+    background: $main-bg-color;
+    color: #ffffff;
+    border-top:#000 solid 8px;
+    border-right: #000 solid 8px;
+    border-bottom: #000 solid 20px;
+    border-left: #000 solid 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     text-align: center;

@@ -1,12 +1,12 @@
 // Base variables
-$navbar-bg-color: #662d91;
-$navbar-accent-color: #e33561;
+$navbar-bg-color: #ae8efd;
+$navbar-accent-color: #fc4e8d;
 $navbar-width: 300px;
 $navbar-padding: 20px;
 
 // Shadow for Sidebar Navbar (Large Screens)
 .navbar-shadow {
-  background-color: rgba(0, 0, 0, 0.25); 
+  background-color: rgba(162, 128, 248, 0.5); 
   width: $navbar-width;
   height: 100vh;
   position: fixed;
@@ -51,6 +51,7 @@ $navbar-padding: 20px;
   margin-bottom: 1rem;
   align-self: flex-end;
   margin-right: -50px;
+  font-weight: bold;
 }
 
 // Navbar menu styles for the sidebar (large screens)
@@ -77,6 +78,7 @@ $navbar-padding: 20px;
       .nav-link, .btn-link {
         color: #ffffff;
         font-size: 1.2rem;
+        font-weight: bold;
         text-decoration: none;
         padding: 0.3rem 0;
         transition: color 0.3s ease;
@@ -124,7 +126,7 @@ $navbar-padding: 20px;
     top: 0;
     right: 0;
     left: 0;
-    background-color: #662d91;
+    background-color: $navbar-bg-color;
     z-index: 1000;
   }
 
