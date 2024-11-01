@@ -14,9 +14,11 @@ const UserProfileDelete = ({ userId, onDelete }) => {
   };
 
   return (
-    <button onClick={handleDelete} style={{ color: 'red' }}>
-      Delete Account
-    </button>
+    <div className="d-flex flex-column px-5 py-3">
+      <button onClick={handleDelete} className="btn btn-danger mt-3">
+        Delete Account
+      </button>
+    </div>
   );
 };
 

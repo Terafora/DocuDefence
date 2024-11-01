@@ -16,8 +16,9 @@ function MainContentWrapper({ children }) {
     const location = useLocation();
 
     useEffect(() => {
-        setAnimateContent(true);
-        const timeout = setTimeout(() => setAnimateContent(false), 1000);
+        // Reset animation by toggling animateContent off briefly
+        setAnimateContent(false);
+        const timeout = setTimeout(() => setAnimateContent(true), 10);
         return () => clearTimeout(timeout);
     }, [location]);
 
@@ -180,7 +181,6 @@ function App() {
                 <Footer />
             </div>
         </Router>
-
     );
 }
 

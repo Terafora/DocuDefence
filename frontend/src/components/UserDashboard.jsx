@@ -203,7 +203,7 @@ function UserDashboard() {
         <div className="user-dashboard">
             <h2 className="dashboard-title">User Dashboard</h2>
 
-            <div className="file-upload-section custom-card">
+            <div className="file-upload-section custom-card my-3">
                 <input
                     type="file"
                     className="custom-input file-input"
@@ -211,7 +211,7 @@ function UserDashboard() {
                     onChange={handleFileChange}
                     style={{ maxWidth: "400px", margin: "0 auto" }}
                 />
-                <button className="custom-btn primary-btn mt-3" onClick={handleUpload} disabled={loading}>
+                <button className="custom-btn primary-btn my-3" onClick={handleUpload} disabled={loading}>
                     Upload PDF
                 </button>
             </div>
@@ -223,14 +223,15 @@ function UserDashboard() {
                 </p>
             )}
 
-            <h3 className="my-files-title">My Files</h3>
-            <ul className="file-list list-unstyled mt-4">
+            <h3 className="my-files-title mt-5">My Files</h3>
+            <ul className="file-list list-unstyled mt-3">
                 {Object.keys(files).length > 0 ? (
                     Object.keys(files).map((filename, index) => (
                         <li key={index} className="file-item custom-card">
-                            <p><strong>Filename:</strong> {filename}</p>
-                            <p><strong>Version:</strong> {files[filename][0].version}</p>
+                            <h3><strong className='d-none'>Filename:</strong> {filename}</h3>
+                            <h4><strong>Version:</strong> {files[filename][0].version}</h4>
                             <p><strong>Upload Date:</strong> {new Date(files[filename][0].upload_date).toLocaleDateString()}</p>
+                            <hr />
                             <div className="file-actions">
                                 <button className="custom-btn danger-btn" onClick={() => confirmDelete(filename)}>Delete</button>
                                 <button className="custom-btn secondary-btn" onClick={() => handlePreview(filename, files[filename][0].version)}>Preview</button>
@@ -246,6 +247,7 @@ function UserDashboard() {
                                         <li key={versionIndex} className="version-item">
                                             <p><strong>Version:</strong> {versionedFile.version}</p>
                                             <p><strong>Upload Date:</strong> {new Date(versionedFile.upload_date).toLocaleDateString()}</p>
+                                            <hr />
                                             <button className="custom-btn secondary-btn small-btn" onClick={() => handlePreview(filename, versionedFile.version)}>Preview</button>
                                             <button className="custom-btn info-btn small-btn" onClick={() => handleDownload(filename, versionedFile.version)}>Download</button>
                                         </li>
@@ -278,8 +280,8 @@ function UserDashboard() {
                 </div>
             )}
 
-            <div className="user-profile-section mt-5">
-                <h3 className="profile-section-title">User Profile</h3>
+            <div className="user-profile-section">
+                <h3 className="profile-section-title mb-3">Account Options</h3>
                 <button className="custom-btn info-btn" onClick={() => setShowProfileModal(true)}>Edit Profile</button>
                 <button className="custom-btn danger-btn ms-2" onClick={() => setShowDeleteModal(true)}>Delete Account</button>
             </div>
@@ -305,7 +307,7 @@ function UserDashboard() {
                     <div className="custom-modal-dialog">
                         <div className="custom-modal-content">
                             <div className="custom-modal-header">
-                                <h2 style={{ color: 'black', fontSize: '1.5rem' }}>Are you sure you want to delete your account and files?</h2>
+                                <h3 className="text-white">Are you sure you want to delete your account and files?</h3>
                                 <button type="button" className="close-btn" onClick={() => setShowDeleteModal(false)}>&times;</button>
                             </div>
                             <div className="modal-body custom-modal-body">

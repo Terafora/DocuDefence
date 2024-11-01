@@ -4,12 +4,12 @@ function CreateUserForm({ newUser, handleInputChange, handleSubmit }) {
   return (
     <div className="custom-modal show">
       <div className="custom-modal-dialog">
-        <div className="custom-modal-content">
+        <div className="custom-modal-content add-skew">
           <div className="custom-modal-header">
             <h2 className="modal-title">Create a New User</h2>
           </div>
           <div className="modal-body custom-modal-body">
-            <form onSubmit={handleSubmit} className="custom-modal-form">
+            <form onSubmit={handleSubmit} className="add-skew custom-modal">
               <input
                 type="text"
                 name="first_name"
