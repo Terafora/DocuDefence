@@ -241,7 +241,7 @@ function UserDashboard() {
                             </div>
 
                             {expandedFiles[filename] && (
-                                <ul className="version-list">
+                                <ul className="version-list list-unstyled">
                                     {files[filename].slice(1).map((versionedFile, versionIndex) => (
                                         <li key={versionIndex} className="version-item">
                                             <p><strong>Version:</strong> {versionedFile.version}</p>

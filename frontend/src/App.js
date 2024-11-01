@@ -8,6 +8,7 @@ import Home from './components/Homepage';
 import Footer from './components/Footer';
 import UserList from './components/UserList';
 import { isLoggedIn, clearToken, getUserEmail } from './services/authService';
+import bgElement from './assets/bg-element.svg';
 import './App.scss';
 
 function MainContentWrapper({ children }) {
@@ -142,6 +143,8 @@ function App() {
     return (
         <Router>
             <div className="App d-lg-flex">
+            <div className="background-animation" style={{backgroundImage: `url(${bgElement})`,}}></div>
+                {/* Main App Content */}
                 <Navbar 
                     loggedIn={loggedIn} 
                     currentUser={currentUser} 
@@ -177,6 +180,7 @@ function App() {
                 <Footer />
             </div>
         </Router>
+
     );
 }
 
