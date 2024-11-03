@@ -48,7 +48,7 @@ func SetMongoClient(client DatabaseClient) {
 }
 
 // JWT secret key
-var jwtKey = []byte("your_secret_key")
+var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
 // Get all users
 func GetUsers(w http.ResponseWriter, r *http.Request) {
