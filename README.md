@@ -147,6 +147,15 @@ The API supports JWT-based authentication, allowing only authorized users to man
 ```
 #### Login
 
+```JSON
+{
+  "email": "john.doe@example.com",
+  "password": "password123"
+}
+```
+
+***
+
 ## JWT Authentication
 
 1. **Login**: Use the `POST /login` endpoint to authenticate and retrieve a JWT token.
