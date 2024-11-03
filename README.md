@@ -6,7 +6,7 @@ DocuDefense is a secure document management system that enables efficient handli
 The API supports JWT-based authentication, allowing only authorized users to manage their profile and associated documents. The Docker setup enables easy deployment of both frontend and backend services.
 ***
 
-## Features Completed
+## Features
 ### Backend Features:
 
 - **User CRUD Operations:**
@@ -93,17 +93,32 @@ The API supports JWT-based authentication, allowing only authorized users to man
 
 ## API Endpoints
 
-| Method | Endpoint                       | Description                            | Payload                                      |
-|--------|--------------------------------|----------------------------------------|----------------------------------------------|
-| GET    | `/users`                       | Retrieves all users                    | N/A                                          |
-| POST   | `/users`                       | Creates a new user                     | `{ "first_name": "First", "surname": "Last", "email": "email@example.com", "birthdate": "YYYY-MM-DD", "password": "password" }` |
-| PUT    | `/users/{id}`                  | Updates an existing user by ID         | `{ "first_name": "Updated", "surname": "Name", "email": "updated@example.com", "birthdate": "YYYY-MM-DD", "password": "newpassword" }` |
-| DELETE | `/users/{id}`                  | Deletes a user by ID                   | N/A                                          |
-| POST   | `/login`                       | Logs in a user and retrieves JWT token | `{ "email": "user@example.com", "password": "password" }` |
-| POST   | `/users/{id}/upload`           | Uploads a PDF file for a user          | Multipart form with `contract` key           |
-| GET    | `/users/{id}/files`            | Retrieves files uploaded by user       | N/A                                          |
-| GET    | `/users/{id}/files/{filename}/download` | Downloads a specific file by filename for a user | N/A |
-| DELETE | `/users/{id}/files/{filename}/delete` | Deletes a specific file by filename for a user | N/A |
+### User Management
+
+| Method | Endpoint              | Description                          | Auth       |
+|--------|------------------------|--------------------------------------|------------|
+| GET    | `/users`              | Retrieve all users (pagination)      | No         |
+| POST   | `/users`              | Create a new user                    | No         |
+| GET    | `/users/email`        | Get user ID by email                 | Yes (JWT)  |
+| PUT    | `/users/{id}`         | Update user by ID                    | Yes (JWT)  |
+| DELETE | `/users/{id}`         | Delete user by ID                    | Yes (JWT)  |
+
+### Authenitcation
+
+| Method | Endpoint | Description               | Auth |
+|--------|----------|---------------------------|------|
+| POST   | `/login` | Log in and get JWT token  | No   |
+
+### Dociment Management
+
+| Method | Endpoint                           | Description                     | Auth       |
+|--------|------------------------------------|---------------------------------|------------|
+| POST   | `/users/{id}/upload`               | Upload a PDF file               | Yes (JWT)  |
+| GET    | `/users/{id}/files`                | Get all files for a user        | Yes (JWT)  |
+| GET    | `/users/{id}/files/{filename}/download` | Download a file                | Yes (JWT)  |
+| DELETE | `/users/{id}/files/{filename}/delete`   | Delete a file                   | Yes (JWT)  |
+
+
 
 ### Example Payloads
 
@@ -118,7 +133,7 @@ The API supports JWT-based authentication, allowing only authorized users to man
 }
 ```
 
-### Updating an Existing User
+#### Updating an Existing User
 
 ```json
 {
@@ -130,6 +145,8 @@ The API supports JWT-based authentication, allowing only authorized users to man
 }
 
 ```
+#### Login
+
 ## JWT Authentication
 
 1. **Login**: Use the `POST /login` endpoint to authenticate and retrieve a JWT token.
@@ -146,19 +163,19 @@ Authorization: Bearer <your_token_here>
 
 To upload a PDF file for a user, use the `/users/{id}/upload` endpoint. Here’s how you can do it in Postman:
 
-  1. **Select POST method**
+1. **Select POST method**
   
   Use `POST /users/{id}/upload` to target a specific user.
 
-  2. **Add Authorization**
-     
+2. **Add Authorization**
+   
   Remember to include your JWT token in the Authorization header.
 
-  3. **Upload the file**
-      - In Postman, go to the **Body** tab.
-      - Select **form-data**.
-      - Add a new key named `contract` and set the type to **File**.
-      - Upload a PDF file.
+3. **Upload the file**
+    - In Postman, go to the **Body** tab.
+    - Select **form-data**.
+    - Add a new key named `contract` and set the type to **File**.
+    - Upload a PDF file.
 
 Example Response:
 
@@ -178,31 +195,12 @@ Example Response:
 - **File Upload**: Use `POST /users/{id}/upload` with a multipart form data containing the key contract for the PDF file.
 - **File Download**: Use `GET /users/{id}/files/{filename}/download` to download a specific file.
 
-
-## Error Handling
-
-The API responds with appropriate status codes and messages when errors occur. Here are the common errors:
-
-  - 401 Unauthorized: When the Authorization header is missing, invalid, or the token is expired.
-  - 404 Not Found: When the user or resource you're trying to access is not found.
-  - 500 Internal Server Error: For server-side issues.
-
-Example response for an invalid JWT token:
-
-```json
-
-{
-  "error": "Invalid or expired token"
-}
-
-```
-
 ***
 
 To keep sensitive data like the JWT secret key secure, use environment variables. Here’s how you can set it up:
 
-  1. **Create a `.env` file** in the project root.
-  2. Add the secret key:
+1. **Create a `.env` file** in the project root.
+2. Add the secret key:
 
 ```plaintext
 
@@ -273,84 +271,176 @@ Here’s a list of Go libraries used in the project:
   - Additional Features:
      - Pagination, filtering, and search functionality for users.
      - CORS middleware and rate-limiting to enhance security and scalability.
+     - Admin Actions for user management and audit logs.
 
 ***
 
 ## Running the Project
-Prerequisites:
+### Prerequisites:
 
- - **Golang** installed (1.16+)
+ - **Golang** installed (1.20 or newer)
  - **MongoDB** instance running locally or remotely
- - **Node.js** (v14+) for the React frontend
+ - **Node.js** (v18+) for the React frontend
  - **Docker** (optional, for containerization)
 
-Steps to Run:
+### Environment Variables
 
- 1. **Clone the repository:**
+Create a `.env` file in the backend directory with the following variables:
 
- ```bash
+```plaintext
 
-git clone https://github.com/your-username/DocuDefense.git
-cd DocuDefense
-```
-
-2. **Set up Backend:**
-
-- Ensure you have a .env file with your MongoDB URI and JWT secret.
-- Install Go dependencies:
-
-```bash
-
-go mod tidy
+MONGODB_URI=<your_mongodb_uri>
+JWT_SECRET=<your_jwt_secret>
 
 ```
 
-- Run the backend:
+### Running Locally
 
-```bash
+**1. Clone the Repository**
+  ```bash
+  git clone https://github.com/your-username/DocuDefense.git
+  cd DocuDefense
+  ```
+**2. Backend Setup**
+   - Navigate to the backend directory and install dependencies:
+   ```bash
+    cd backend
+    go mod tidy
+   ```
+   - Run the backend server:
+  ```bash
+  go run src/main.go
+  ```
+**3. Frontend Setup**
+  - Navigate to the frontend directory and install dependecies:
+  ```bash
+    cd ../frontend
+    npm install
+  ```
+  - Start the frontend server:
+  ```bash
+  cd ../frontend
+  npm install
+  ```
+4. Access the application at `http://localhost:3000`.
 
-    go run src/main.go
-```
-
-3. **Set up Frontend:**
-
-- Navigate to the frontend directory:
-
-```bash
-
-        cd frontend
-        npm install
-        npm start
-```
-
-- The frontend should now be running at `http://localhost:3000`.
+### Running with Docker
+**1. Build and Run with Docker Compose**
+   ```bash
+    docker-compose up --build
+   ```
+   This command starts both frontend and backend services, exposing the frontend on port `3000` and backend on port `8000`.
 
 ***
 
-## Docker Setup (Optional)
+## Usage
 
-If you prefer to use Docker for containerizing the application, you can follow these steps:
+DocuDefense is a secure document management platform that offers a range of features to help users manage, secure, and organize their files. Below are the instructions on how to use each feature within the application.
 
-**1. Dockerfile**
+### 1. Registering and Logging In
 
-The Dockerfile is already provided in the project for both the backend and frontend. The Dockerfile is located at the root of the `backend`  directory.
+- **Register**: New users can create an account by clicking the "New User?" link in the navigation bar. This opens the registration form where users should provide their first name, surname, email, birthdate, and a password. Once registered, an alert confirms account creation, allowing the user to log in.
+- **Login**: Registered users can log in by entering their email and password. A JWT token is generated and stored in the browser’s local storage upon successful login, enabling access to restricted features.
+- **Logout**: To log out, simply click the "Logout" button in the navigation bar. This clears the JWT token from local storage and restricts access to protected features.
 
-**2. Build Docker Image**
+2. User Dashboard
 
-To build the Docker image for the backend, navigate to the backend directory and run:
+- After logging in, users can access their **User Dashboard**, which provides options to upload, manage, and preview files as well as update or delete their account.
+- **File Upload**: Users can upload PDF files securely. To upload a file, select a PDF file using the file input, then click "Upload PDF". The application version controls each file, saving new versions with each upload.
+- **File Management**:
+    - **Preview**: Click the "Preview" button to open a modal with a PDF preview of the file.
+    - **Download**: Download any version of a file by clicking "Download". This will download the specific file version as a PDF.
+    - **Delete**: To delete a file, click the "Delete" button. A confirmation prompt appears before deletion. Previous versions of the file are also listed, with options to preview or download specific versions.
+- **Account Management**:
+    - **Update Profile**: Users can update their personal information, including first name, surname, email, and password. This can be done by clicking the "Edit Profile" button, filling in the fields, and saving changes.
+    - **Delete Account**: If a user wants to delete their account and all associated files, they can click the "Delete Account" button. A confirmation prompt ensures that this action is intentional.
 
-```bash
+### 3. User Directory and Search
 
-docker build -t docudefense-backend .
+- **User List**: The "All Users" page provides a directory of all users. Users can browse through the list using pagination controls or search for specific users.
+- **Search Users**: Enter a first name or surname in the search bar to find specific users. Search results are paginated, and users can navigate through them using "Next" and "Previous" buttons.
 
-```
-**Work In Progress**
+### 4. File Version Control
+
+- DocuDefense offers version control for uploaded files. Each time a user uploads a file with the same name, the system saves it as a new version rather than overwriting the original.
+- **Viewing Previous Versions**: Users can expand a file’s entry in the "My Files" section to view and manage previous versions. Each version can be previewed or downloaded.
+- **Deleting Versions**: When deleting a file, all associated versions are also deleted from the system.
+
+### 5. JWT Authentication and Authorization
+
+- **Token Storage**: The application uses JWT tokens for session management. Tokens are stored securely in the browser's local storage and are automatically attached to authenticated requests.
+- **Token Expiry**: Each token expires after 1 hour. Users will need to re-login once their session expires.
+- **Protected Routes**: Routes such as `/dashboard`, `/allusers`, and user-specific file management routes require a valid JWT token, ensuring only authorized users can access these features.
+
+### 6. Document Management Features
+
+- **File Upload & Storage**: Users can securely upload files, with each file stored as a document entry in MongoDB. The files themselves are stored on disk.
+- **Advanced Search**: Users can search by first name or surname to locate specific users.
+- **Tagging and Categorizing**: Users can categorize files during upload to make organization simpler. (Note: If not currently implemented, consider adding this feature in the future.)
+- **File Permissions**: By default, users can only view, edit, or delete their own files.
+
+### 7. Front-End Navigation
+
+- The front-end is organized for seamless navigation between the homepage, about section, user dashboard, and user directory.
+- **Navbar**: The navbar provides quick access to key sections of the application, with login/logout buttons dynamically updating based on the user's session status.
+- **Animation and Responsiveness**: The front-end is designed to be responsive, with animations that enhance user experience, such as scroll-based transformations.
+
+### 8. Admin Actions (Future Enhancements)
+
+- **Admin User Management**: Consider implementing an admin feature for managing all users, roles, and permissions across the platform.
+- **Audit Logs**: Adding logging features to track user activity (such as file uploads, downloads, and deletions) could be a valuable enhancement.
+
+### Quick Summary of Commands and Endpoints
+
+Below is a summary of key commands and endpoints available in the application for easy reference.
+
+- **File Management**:
+    - Upload a file: `/users/{id}/upload`
+    - View user files: `/users/{id}/files`
+    - Download file: `/users/{id}/files/{filename}/download`
+    - Delete file: `/users/{id}/files/{filename}/delete`
+
+- **User Management**:
+    - Register a new user: `/users` (POST)
+    - Login user: `/login` (POST)
+    - Update user details: `/users/{id}` (PUT)
+    - Delete user: `/users/{id}` (DELETE)
+    - Get all users or search: `/api/users` (GET with search query)
 
 ***
 
-## Contributing
+## Error Handling
 
-As this is a challenge posed to myself, I won't be accepting any outside contributions for the moment.
+The API provides meaningful HTTP status codes and error messages:
+
+  - `401 Unauthorized`: Invalid or missing JWT token.
+  - `404 Not Found`: Resource does not exist.
+  - `500 Internal Server Error`: Server-side error.
+
+### Example Response for Unauthorized Access
+
+```json
+
+{
+  "error": "Invalid or expired token"
+}
+
+```
+
+***
+### Bugs
+
+- **PDF Preview** shows images rotated 180 degrees seemingly randomly and hasn't been addressed just yet.
+- **Token Expirey** Won't log users out but will stop them from being able to view account related information and documents. Currently the token expires after and hour.
+- **Styling Inconsistencies** appear between modals and such and need to be touched up in the future.
+
+***
+
+### Future Improvements
+
+- **Unit Testing**: Comprehensive test coverage for all API endpoints.
+- **Enhanced Security**: Rate limiting and stricter CORS policy.
+- **Additional Features**: Pagination for file versions, advanced search filters.
 
 ***
 
