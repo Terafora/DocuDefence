@@ -1,34 +1,41 @@
 # DocuDefense
 ## Project Overview
 
-DocuDefense is a full-stack application that functions as a secure document management system, specifically designed for handling contracts in PDF format. The backend, built in Golang, provides a secure API for CRUD operations on users and file uploads, leveraging MongoDB for data storage. The frontend, built in React, offers a simple interface for users to manage their profile and documents.
+DocuDefense is a secure document management system that enables efficient handling and storage of sensitive files, specifically designed for contract PDFs. Built as a full-stack application with Golang and MongoDB for the backend and React for the frontend, DocuDefense offers user authentication, document uploading, and version control.
 
-The API supports user authentication using JWT, ensuring that only authenticated users can perform actions like updating or deleting profiles, and uploading files.
+The API supports JWT-based authentication, allowing only authorized users to manage their profile and associated documents. The Docker setup enables easy deployment of both frontend and backend services.
 ***
 
 ## Features Completed
 ### Backend Features:
 
 - **User CRUD Operations:**
-  - Create, Retrieve, Update, and Delete users.
+  - Create, Retrieve, Update, and Delete user accounts.
 - **File Upload:**
-  - Upload PDF files and associate them with users.
+  - Upload PDF files and associate them with users with automatic versioning.
 - **Authentication:**
   - Basic login functionality using email and password.
   - JWT-based token authentication for protecting routes.
 - **JWT Authentication:**
   - Middleware to protect sensitive routes using JWT tokens.
-- **Docker**
+- **User Search, Pagination and Filtering**
+  - Fetch all users with pagination and search capabilities.
+- **Docker Support:**
+  - Backend and frontend Dockerfiles and a Docker Compose file to orchestrate services
 
 ### Frontend Features:
 
 - **User Management:**
   - View a list of users.
   - Create new users.
-  - Log in to view and update your profile.
+  - Log in to view, update and your profile.
   - Delete your account.
-- **File Upload:**
-  - Upload PDF files to be associated with your user profile.
+- **Document Management:**
+  - Upload PDF files to be associated with your user profile with versioning for each document.
+  - Preview, download and delete files.
+  - View a list of all users with search functionality and pagination.
+- **Dynamic User Interface:**
+  - Responsive layout with animations, custom modals, and user feedback messages.
 
 
 ***
@@ -41,11 +48,16 @@ The API supports user authentication using JWT, ensuring that only authenticated
     - Testing Framework: Go's built-in testing package
     - Database: **MongoDB** for data storage
     - Authentication: **JWT**
-    - File Handling: **Multipart/FormData** file uploads
+    - File Handling: **Multipart/FormData** for PDF uploads
   
  - **Frontend:**
    - Framework: **React**
    - Styling: **SCSS Modules**
+   - PDF Preview: **pdfjs-dist** for in-browser rendering
+
+- **Deployment:**
+  - **Docker** for containerization of backend and frontend.
+  - **Docker Compose** for service orchestration
 
 ***
 
@@ -56,22 +68,23 @@ The API supports user authentication using JWT, ensuring that only authenticated
 .
 ├── frontend
 │   ├── src
-│   │   ├── components              # React Components (Login, UserList, etc.)
+│   │   ├── components              # React Components (AuthPanel, UserDashboard, etc.)
 │   │   ├── services                # API service functions for frontend
-│   │   ├── App.js                  # Main application entry for React
-│   │   └── index.js                # Entry point for React rendering
+│   │   ├── App.js                  # Main React application file
+│   │   └── index.js                # React entry point
 ├── backend
 │   ├── src
-│   │   ├── handlers                # Golang CRUD handler functions
-│   │   ├── models                  # Golang model definitions (User)
-│   │   ├── jwtmiddleware.go        # JWT middleware for protected routes
-│   │   ├── middleware.go           # Basic auth middleware (to be deprecated)
-│   │   └── main.go                 # Main application entry point
+│   │   ├── handlers                # Go handlers for CRUD, auth, and file management
+│   │   ├── models                  # Go model definitions (User, Document)
+│   │   ├── jwtmiddleware.go        # JWT middleware
+│   │   ├── middleware.go           # Basic auth middleware
+│   │   └── main.go                 # Main backend entry point
 │   ├── go.mod                      # Go modules (dependencies)
-│   └── .env                        # Environment variables (e.g., MongoDB URI, JWT_SECRET)
-├── Dockerfile                      # Dockerfile for Docker support (coming soon)
-├── docker-compose.yml              # Compose file for running MongoDB and the backend
+│   ├── Dockerfile                  # Dockerfile for backend
+│   └── .env                        # Environment variables (MongoDB URI, JWT_SECRET)
+├── docker-compose.yml              # Compose file for frontend and backend services
 ├── README.md                       # Project documentation
+                    # Project documentation
 
 
 ```
@@ -79,95 +92,55 @@ The API supports user authentication using JWT, ensuring that only authenticated
 ***
 
 ## API Endpoints
-| Method | Endpoint         | Description                | Payload                              |
-|--------|------------------|----------------------------|--------------------------------------|
-| GET    | `/users`          | Retrieves all users        | N/A                                  |
-| POST   | `/users`          | Creates a new user         | `{ "id": "1", "first_name": "...", ... }` |
-| PUT    | `/users/{id}`     | Updates an existing user   | `{ "first_name": "Updated", ... }`   |
-| DELETE | `/users/{id}`     | Deletes a user by ID       | N/A 
-| POST    | `/login`    | Logs in and retrieves a JWT token   | `{ "email": "...", "password": "..."}`   |
-| POST | `/users/{id}/upload`     | Uploads a PDF file for a user      | Multipart form with `contract` key 
 
-### Example Payload for Creating a User
+| Method | Endpoint                       | Description                            | Payload                                      |
+|--------|--------------------------------|----------------------------------------|----------------------------------------------|
+| GET    | `/users`                       | Retrieves all users                    | N/A                                          |
+| POST   | `/users`                       | Creates a new user                     | `{ "first_name": "First", "surname": "Last", "email": "email@example.com", "birthdate": "YYYY-MM-DD", "password": "password" }` |
+| PUT    | `/users/{id}`                  | Updates an existing user by ID         | `{ "first_name": "Updated", "surname": "Name", "email": "updated@example.com", "birthdate": "YYYY-MM-DD", "password": "newpassword" }` |
+| DELETE | `/users/{id}`                  | Deletes a user by ID                   | N/A                                          |
+| POST   | `/login`                       | Logs in a user and retrieves JWT token | `{ "email": "user@example.com", "password": "password" }` |
+| POST   | `/users/{id}/upload`           | Uploads a PDF file for a user          | Multipart form with `contract` key           |
+| GET    | `/users/{id}/files`            | Retrieves files uploaded by user       | N/A                                          |
+| GET    | `/users/{id}/files/{filename}/download` | Downloads a specific file by filename for a user | N/A |
+| DELETE | `/users/{id}/files/{filename}/delete` | Deletes a specific file by filename for a user | N/A |
 
-```JSON
+### Example Payloads
+
+#### Creating a New User
+```json
 {
-  "first_name": "UpdatedName",
-  "surname": "UpdatedSurname",
-  "email": "newuser@example.com",
-  "birthdate": "2024-11-01"
+  "first_name": "John",
+  "surname": "Doe",
+  "email": "john.doe@example.com",
+  "birthdate": "1990-01-01",
+  "password": "securepassword123"
 }
 ```
 
-### Example Payload for Updating a User
-
-```JSON
-{
-  "first_name": "UpdatedName",
-  "surname": "UpdatedSurname",
-  "email": "newuser@example.com",
-  "birthdate": "2024-11-01"
-}
-```
-
-***
-
-## Error Handling
-
-The API responds with appropriate status codes and messages when errors occur. Here are the common errors:
-
-  - 401 Unauthorized: When the Authorization header is missing, invalid, or the token is expired.
-  - 404 Not Found: When the user or resource you're trying to access is not found.
-  - 500 Internal Server Error: For server-side issues.
-
-Example response for an invalid JWT token:
+### Updating an Existing User
 
 ```json
-
 {
-  "error": "Invalid or expired token"
+  "first_name": "John",
+  "surname": "Smith",
+  "email": "john.smith@example.com",
+  "birthdate": "1990-01-01",
+  "password": "newpassword456"
 }
 
 ```
+## JWT Authentication
 
-***
-
-## JWT Authentication Testing
-
-To test JWT authentication:
-
-  1. **Login to get the JWT Token**
-     
-Use the  `POST /login` endpoint to log in with your user credentials. You’ll receive a JWT token in the response.
-
-  2. **Use the token in requests**
-
-For protected routes like Update, Delete, and File Upload, add the JWT token to the Authorization header in this format:
+1. **Login**: Use the `POST /login` endpoint to authenticate and retrieve a JWT token.
+2. **Authorization**: Include the JWT token in the `Authorization` header for protected routes in the format:
 
 ```plaintext
 
-Bearer <your_token_here>
+Authorization: Bearer <your_token_here>
+
 
 ```
-  Example in Postman:
-      - Add a new Header called `Authorization`
-      - Set the value to: `Bearer <your_token_here>`
-
-  3. **Testing a Protected Route**
-
-Now, send a request to a protected endpoint like `DELETE /users/{id}` using the token from step 1.
-
-If your token is valid, you’ll get a response like this:
-
-```json
-
-{
-  "message": "User deleted successfully"
-}
-
-```
-
-***
 
 ## File Upload Example
 
@@ -200,7 +173,31 @@ Example Response:
 
 ***
 
-## Environment Variables
+### File Upload and Download
+
+- **File Upload**: Use `POST /users/{id}/upload` with a multipart form data containing the key contract for the PDF file.
+- **File Download**: Use `GET /users/{id}/files/{filename}/download` to download a specific file.
+
+
+## Error Handling
+
+The API responds with appropriate status codes and messages when errors occur. Here are the common errors:
+
+  - 401 Unauthorized: When the Authorization header is missing, invalid, or the token is expired.
+  - 404 Not Found: When the user or resource you're trying to access is not found.
+  - 500 Internal Server Error: For server-side issues.
+
+Example response for an invalid JWT token:
+
+```json
+
+{
+  "error": "Invalid or expired token"
+}
+
+```
+
+***
 
 To keep sensitive data like the JWT secret key secure, use environment variables. Here’s how you can set it up:
 
