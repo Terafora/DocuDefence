@@ -352,7 +352,7 @@ DocuDefense is a secure document management platform that offers a range of feat
 - **Login**: Registered users can log in by entering their email and password. A JWT token is generated and stored in the browser’s local storage upon successful login, enabling access to restricted features.
 - **Logout**: To log out, simply click the "Logout" button in the navigation bar. This clears the JWT token from local storage and restricts access to protected features.
 
-2. User Dashboard
+### 2. User Dashboard
 
 - After logging in, users can access their **User Dashboard**, which provides options to upload, manage, and preview files as well as update or delete their account.
 - **File Upload**: Users can upload PDF files securely. To upload a file, select a PDF file using the file input, then click "Upload PDF". The application version controls each file, saving new versions with each upload.
