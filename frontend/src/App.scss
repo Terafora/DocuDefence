@@ -108,7 +108,7 @@ $sidebar-width: 320px;
   min-height: 100vh; 
   position: relative;
 
-  // Background Animation
+  // Background Animation (incomplete)
   .background-animation {
     position: fixed;
     top: 0;
@@ -348,20 +348,35 @@ $sidebar-width: 320px;
     a {
       text-decoration: none;
       font-weight: bold;
-      color: #dc3545; // Red for "Delete"
+      color: #dc3545;
     }
 
     a.cancel {
-      color: #6c757d; // Gray for "Cancel"
+      color: #6c757d;
     }
   }
 }
 
-// Responsive adjustments for modal on smaller screens
 @media screen and (max-width: 991px) {
   .custom-modal .custom-modal-content {
     max-width: 90%;
     padding: 20px;
+  }
+
+  // Remove skew transformations
+  * {
+    transform: none !important;
+  }
+  
+  // Additional specific elements that may have skew
+  .main-content, .custom-modal-dialog, .App .background-animation {
+    transform: none !important;
+    filter: none !important;
+    padding-top: 5rem !important;
+  }
+
+  .animate {
+    animation: none;
   }
 
 }
